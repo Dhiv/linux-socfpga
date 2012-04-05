@@ -1,11 +1,23 @@
 /*
- * ltt-context.c
- *
- * Copyright 2011 (c) - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * lttng-context.c
  *
  * LTTng trace/channel/event context management.
  *
- * Dual LGPL v2.1/GPL v2 license.
+ * Copyright (C) 2011-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; only
+ * version 2.1 of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <linux/module.h>
@@ -13,8 +25,8 @@
 #include <linux/mutex.h>
 #include <linux/slab.h>
 #include "wrapper/vmalloc.h"	/* for wrapper_vmalloc_sync_all() */
-#include "ltt-events.h"
-#include "ltt-tracer.h"
+#include "lttng-events.h"
+#include "lttng-tracer.h"
 
 int lttng_find_context(struct lttng_ctx *ctx, const char *name)
 {

@@ -1,11 +1,23 @@
 /*
  * ring_buffer_vfs.c
  *
- * Copyright (C) 2009-2010 - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- *
  * Ring Buffer VFS file operations.
  *
- * Dual LGPL v2.1/GPL v2 license.
+ * Copyright (C) 2010-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; only
+ * version 2.1 of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <linux/module.h>
@@ -88,7 +100,7 @@ unsigned int lib_ring_buffer_poll(struct file *filp, poll_table *wait)
 	unsigned int mask = 0;
 	struct lib_ring_buffer *buf = filp->private_data;
 	struct channel *chan = buf->backend.chan;
-	const struct lib_ring_buffer_config *config = chan->backend.config;
+	const struct lib_ring_buffer_config *config = &chan->backend.config;
 	int finalized, disabled;
 
 	if (filp->f_mode & FMODE_READ) {
@@ -165,7 +177,7 @@ long lib_ring_buffer_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 {
 	struct lib_ring_buffer *buf = filp->private_data;
 	struct channel *chan = buf->backend.chan;
-	const struct lib_ring_buffer_config *config = chan->backend.config;
+	const struct lib_ring_buffer_config *config = &chan->backend.config;
 
 	if (lib_ring_buffer_channel_is_disabled(chan))
 		return -EIO;
@@ -262,7 +274,7 @@ long lib_ring_buffer_compat_ioctl(struct file *filp, unsigned int cmd,
 {
 	struct lib_ring_buffer *buf = filp->private_data;
 	struct channel *chan = buf->backend.chan;
-	const struct lib_ring_buffer_config *config = chan->backend.config;
+	const struct lib_ring_buffer_config *config = &chan->backend.config;
 
 	if (lib_ring_buffer_channel_is_disabled(chan))
 		return -EIO;

@@ -1,19 +1,31 @@
-#ifndef _LTT_DEBUGFS_ABI_H
-#define _LTT_DEBUGFS_ABI_H
+#ifndef _LTTNG_ABI_H
+#define _LTTNG_ABI_H
 
 /*
- * ltt-debugfs-abi.h
+ * lttng-abi.h
  *
- * Copyright 2010 (c) - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * LTTng ABI header
  *
- * LTTng debugfs ABI header
+ * Copyright (C) 2010-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
  *
- * Dual LGPL v2.1/GPL v2 license.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; only
+ * version 2.1 of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <linux/fs.h>
 
-#define LTTNG_SYM_NAME_LEN	256
+#define LTTNG_KERNEL_SYM_NAME_LEN	256
 
 enum lttng_kernel_instrumentation {
 	LTTNG_KERNEL_TRACEPOINT	= 0,
@@ -35,7 +47,7 @@ enum lttng_kernel_output {
 /*
  * LTTng DebugFS ABI structures.
  */
-
+#define LTTNG_KERNEL_CHANNEL_PADDING	LTTNG_KERNEL_SYM_NAME_LEN + 32
 struct lttng_kernel_channel {
 	int overwrite;				/* 1: overwrite, 0: discard */
 	uint64_t subbuf_size;			/* in bytes */
@@ -43,13 +55,14 @@ struct lttng_kernel_channel {
 	unsigned int switch_timer_interval;	/* usecs */
 	unsigned int read_timer_interval;	/* usecs */
 	enum lttng_kernel_output output;	/* splice, mmap */
+	char padding[LTTNG_KERNEL_CHANNEL_PADDING];
 };
 
 struct lttng_kernel_kretprobe {
 	uint64_t addr;
 
 	uint64_t offset;
-	char symbol_name[LTTNG_SYM_NAME_LEN];
+	char symbol_name[LTTNG_KERNEL_SYM_NAME_LEN];
 };
 
 /*
@@ -59,31 +72,36 @@ struct lttng_kernel_kprobe {
 	uint64_t addr;
 
 	uint64_t offset;
-	char symbol_name[LTTNG_SYM_NAME_LEN];
+	char symbol_name[LTTNG_KERNEL_SYM_NAME_LEN];
 };
 
 struct lttng_kernel_function_tracer {
-	char symbol_name[LTTNG_SYM_NAME_LEN];
+	char symbol_name[LTTNG_KERNEL_SYM_NAME_LEN];
 };
 
 /*
  * For syscall tracing, name = '\0' means "enable all".
  */
+#define LTTNG_KERNEL_EVENT_PADDING1	16
+#define LTTNG_KERNEL_EVENT_PADDING2	LTTNG_KERNEL_SYM_NAME_LEN + 32
 struct lttng_kernel_event {
-	char name[LTTNG_SYM_NAME_LEN];	/* event name */
+	char name[LTTNG_KERNEL_SYM_NAME_LEN];	/* event name */
 	enum lttng_kernel_instrumentation instrumentation;
+	char padding[LTTNG_KERNEL_EVENT_PADDING1];
+
 	/* Per instrumentation type configuration */
 	union {
 		struct lttng_kernel_kretprobe kretprobe;
 		struct lttng_kernel_kprobe kprobe;
 		struct lttng_kernel_function_tracer ftrace;
+		char padding[LTTNG_KERNEL_EVENT_PADDING2];
 	} u;
 };
 
 struct lttng_kernel_tracer_version {
-	uint32_t version;
+	uint32_t major;
+	uint32_t minor;
 	uint32_t patchlevel;
-	uint32_t sublevel;
 };
 
 enum lttng_kernel_calibrate_type {
@@ -110,13 +128,18 @@ enum lttng_kernel_context_type {
 struct lttng_kernel_perf_counter_ctx {
 	uint32_t type;
 	uint64_t config;
-	char name[LTTNG_SYM_NAME_LEN];
+	char name[LTTNG_KERNEL_SYM_NAME_LEN];
 };
 
+#define LTTNG_KERNEL_CONTEXT_PADDING1	16
+#define LTTNG_KERNEL_CONTEXT_PADDING2	LTTNG_KERNEL_SYM_NAME_LEN + 32
 struct lttng_kernel_context {
 	enum lttng_kernel_context_type ctx;
+	char padding[LTTNG_KERNEL_CONTEXT_PADDING1];
+
 	union {
 		struct lttng_kernel_perf_counter_ctx perf_counter;
+		char padding[LTTNG_KERNEL_CONTEXT_PADDING2];
 	} u;
 };
 
@@ -150,4 +173,4 @@ struct lttng_kernel_context {
 #define LTTNG_KERNEL_ENABLE			_IO(0xF6, 0x80)
 #define LTTNG_KERNEL_DISABLE			_IO(0xF6, 0x81)
 
-#endif /* _LTT_DEBUGFS_ABI_H */
+#endif /* _LTTNG_ABI_H */

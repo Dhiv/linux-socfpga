@@ -1,26 +1,39 @@
 /*
- * (C) Copyright	2009-2011 -
- * 		Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * probes/lttng-kprobes.c
  *
  * LTTng kprobes integration module.
  *
- * Dual LGPL v2.1/GPL v2 license.
+ * Copyright (C) 2009-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; only
+ * version 2.1 of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <linux/module.h>
 #include <linux/kprobes.h>
 #include <linux/slab.h>
-#include "../ltt-events.h"
+#include "../lttng-events.h"
 #include "../wrapper/ringbuffer/frontend_types.h"
 #include "../wrapper/vmalloc.h"
-#include "../ltt-tracer.h"
+#include "../lttng-tracer.h"
 
 static
 int lttng_kprobes_handler_pre(struct kprobe *p, struct pt_regs *regs)
 {
-	struct ltt_event *event =
-		container_of(p, struct ltt_event, u.kprobe.kp);
-	struct ltt_channel *chan = event->chan;
+	struct lttng_event *event =
+		container_of(p, struct lttng_event, u.kprobe.kp);
+	struct lttng_channel *chan = event->chan;
 	struct lib_ring_buffer_ctx ctx;
 	int ret;
 	unsigned long data = (unsigned long) p->addr;
@@ -33,11 +46,11 @@ int lttng_kprobes_handler_pre(struct kprobe *p, struct pt_regs *regs)
 		return 0;
 
 	lib_ring_buffer_ctx_init(&ctx, chan->chan, event, sizeof(data),
-				 ltt_alignof(data), -1);
+				 lttng_alignof(data), -1);
 	ret = chan->ops->event_reserve(&ctx, event->id);
 	if (ret < 0)
 		return 0;
-	lib_ring_buffer_align_ctx(&ctx, ltt_alignof(data));
+	lib_ring_buffer_align_ctx(&ctx, lttng_alignof(data));
 	chan->ops->event_write(&ctx, &data, sizeof(data));
 	chan->ops->event_commit(&ctx);
 	return 0;
@@ -47,7 +60,7 @@ int lttng_kprobes_handler_pre(struct kprobe *p, struct pt_regs *regs)
  * Create event description
  */
 static
-int lttng_create_kprobe_event(const char *name, struct ltt_event *event)
+int lttng_create_kprobe_event(const char *name, struct lttng_event *event)
 {
 	struct lttng_event_field *field;
 	struct lttng_event_desc *desc;
@@ -71,7 +84,7 @@ int lttng_create_kprobe_event(const char *name, struct ltt_event *event)
 	field->name = "ip";
 	field->type.atype = atype_integer;
 	field->type.u.basic.integer.size = sizeof(unsigned long) * CHAR_BIT;
-	field->type.u.basic.integer.alignment = ltt_alignof(unsigned long) * CHAR_BIT;
+	field->type.u.basic.integer.alignment = lttng_alignof(unsigned long) * CHAR_BIT;
 	field->type.u.basic.integer.signedness = is_signed_type(unsigned long);
 	field->type.u.basic.integer.reverse_byte_order = 0;
 	field->type.u.basic.integer.base = 16;
@@ -92,7 +105,7 @@ int lttng_kprobes_register(const char *name,
 			   const char *symbol_name,
 			   uint64_t offset,
 			   uint64_t addr,
-			   struct ltt_event *event)
+			   struct lttng_event *event)
 {
 	int ret;
 
@@ -107,14 +120,14 @@ int lttng_kprobes_register(const char *name,
 	event->u.kprobe.kp.pre_handler = lttng_kprobes_handler_pre;
 	if (symbol_name) {
 		event->u.kprobe.symbol_name =
-			kzalloc(LTTNG_SYM_NAME_LEN * sizeof(char),
+			kzalloc(LTTNG_KERNEL_SYM_NAME_LEN * sizeof(char),
 				GFP_KERNEL);
 		if (!event->u.kprobe.symbol_name) {
 			ret = -ENOMEM;
 			goto name_error;
 		}
 		memcpy(event->u.kprobe.symbol_name, symbol_name,
-		       LTTNG_SYM_NAME_LEN * sizeof(char));
+		       LTTNG_KERNEL_SYM_NAME_LEN * sizeof(char));
 		event->u.kprobe.kp.symbol_name =
 			event->u.kprobe.symbol_name;
 	}
@@ -144,13 +157,13 @@ error:
 }
 EXPORT_SYMBOL_GPL(lttng_kprobes_register);
 
-void lttng_kprobes_unregister(struct ltt_event *event)
+void lttng_kprobes_unregister(struct lttng_event *event)
 {
 	unregister_kprobe(&event->u.kprobe.kp);
 }
 EXPORT_SYMBOL_GPL(lttng_kprobes_unregister);
 
-void lttng_kprobes_destroy_private(struct ltt_event *event)
+void lttng_kprobes_destroy_private(struct lttng_event *event)
 {
 	kfree(event->u.kprobe.symbol_name);
 	kfree(event->desc->fields);

@@ -1,11 +1,23 @@
 /*
  * lttng-syscalls.c
  *
- * Copyright 2010-2011 (c) - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
- *
  * LTTng syscall probes.
  *
- * Dual LGPL v2.1/GPL v2 license.
+ * Copyright (C) 2010-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; only
+ * version 2.1 of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <linux/module.h>
@@ -14,13 +26,12 @@
 #include <asm/ptrace.h>
 #include <asm/syscall.h>
 
-#include "ltt-events.h"
+#include "lttng-events.h"
 
 #ifndef CONFIG_COMPAT
-static inline int is_compat_task(void)
-{
-	return 0;
-}
+# ifndef is_compat_task
+#  define is_compat_task()	(0)
+# endif
 #endif
 
 static
@@ -141,7 +152,7 @@ const struct trace_syscall_entry compat_sc_table[] = {
 
 #undef CREATE_SYSCALL_TABLE
 
-static void syscall_entry_unknown(struct ltt_event *event,
+static void syscall_entry_unknown(struct lttng_event *event,
 	struct pt_regs *regs, unsigned int id)
 {
 	unsigned long args[UNKNOWN_SYSCALL_NRARGS];
@@ -155,8 +166,8 @@ static void syscall_entry_unknown(struct ltt_event *event,
 
 void syscall_entry_probe(void *__data, struct pt_regs *regs, long id)
 {
-	struct ltt_channel *chan = __data;
-	struct ltt_event *event, *unknown_event;
+	struct lttng_channel *chan = __data;
+	struct lttng_event *event, *unknown_event;
 	const struct trace_syscall_entry *table, *entry;
 	size_t table_len;
 
@@ -275,7 +286,7 @@ void syscall_entry_probe(void *__data, struct pt_regs *regs, long id)
 /* noinline to diminish caller stack size */
 static
 int fill_table(const struct trace_syscall_entry *table, size_t table_len,
-	struct ltt_event **chan_table, struct ltt_channel *chan, void *filter)
+	struct lttng_event **chan_table, struct lttng_channel *chan, void *filter)
 {
 	const struct lttng_event_desc *desc;
 	unsigned int i;
@@ -296,10 +307,10 @@ int fill_table(const struct trace_syscall_entry *table, size_t table_len,
 		if (chan_table[i])
 			continue;
 		memset(&ev, 0, sizeof(ev));
-		strncpy(ev.name, desc->name, LTTNG_SYM_NAME_LEN);
-		ev.name[LTTNG_SYM_NAME_LEN - 1] = '\0';
+		strncpy(ev.name, desc->name, LTTNG_KERNEL_SYM_NAME_LEN);
+		ev.name[LTTNG_KERNEL_SYM_NAME_LEN - 1] = '\0';
 		ev.instrumentation = LTTNG_KERNEL_NOOP;
-		chan_table[i] = ltt_event_create(chan, &ev, filter,
+		chan_table[i] = lttng_event_create(chan, &ev, filter,
 						desc);
 		if (!chan_table[i]) {
 			/*
@@ -314,7 +325,7 @@ int fill_table(const struct trace_syscall_entry *table, size_t table_len,
 	return 0;
 }
 
-int lttng_syscalls_register(struct ltt_channel *chan, void *filter)
+int lttng_syscalls_register(struct lttng_channel *chan, void *filter)
 {
 	struct lttng_kernel_event ev;
 	int ret;
@@ -323,7 +334,7 @@ int lttng_syscalls_register(struct ltt_channel *chan, void *filter)
 
 	if (!chan->sc_table) {
 		/* create syscall table mapping syscall to events */
-		chan->sc_table = kzalloc(sizeof(struct ltt_event *)
+		chan->sc_table = kzalloc(sizeof(struct lttng_event *)
 					* ARRAY_SIZE(sc_table), GFP_KERNEL);
 		if (!chan->sc_table)
 			return -ENOMEM;
@@ -332,7 +343,7 @@ int lttng_syscalls_register(struct ltt_channel *chan, void *filter)
 #ifdef CONFIG_COMPAT
 	if (!chan->compat_sc_table) {
 		/* create syscall table mapping compat syscall to events */
-		chan->compat_sc_table = kzalloc(sizeof(struct ltt_event *)
+		chan->compat_sc_table = kzalloc(sizeof(struct lttng_event *)
 					* ARRAY_SIZE(compat_sc_table), GFP_KERNEL);
 		if (!chan->compat_sc_table)
 			return -ENOMEM;
@@ -343,10 +354,10 @@ int lttng_syscalls_register(struct ltt_channel *chan, void *filter)
 			&__event_desc___sys_unknown;
 
 		memset(&ev, 0, sizeof(ev));
-		strncpy(ev.name, desc->name, LTTNG_SYM_NAME_LEN);
-		ev.name[LTTNG_SYM_NAME_LEN - 1] = '\0';
+		strncpy(ev.name, desc->name, LTTNG_KERNEL_SYM_NAME_LEN);
+		ev.name[LTTNG_KERNEL_SYM_NAME_LEN - 1] = '\0';
 		ev.instrumentation = LTTNG_KERNEL_NOOP;
-		chan->sc_unknown = ltt_event_create(chan, &ev, filter,
+		chan->sc_unknown = lttng_event_create(chan, &ev, filter,
 						    desc);
 		if (!chan->sc_unknown) {
 			return -EINVAL;
@@ -358,10 +369,10 @@ int lttng_syscalls_register(struct ltt_channel *chan, void *filter)
 			&__event_desc___compat_sys_unknown;
 
 		memset(&ev, 0, sizeof(ev));
-		strncpy(ev.name, desc->name, LTTNG_SYM_NAME_LEN);
-		ev.name[LTTNG_SYM_NAME_LEN - 1] = '\0';
+		strncpy(ev.name, desc->name, LTTNG_KERNEL_SYM_NAME_LEN);
+		ev.name[LTTNG_KERNEL_SYM_NAME_LEN - 1] = '\0';
 		ev.instrumentation = LTTNG_KERNEL_NOOP;
-		chan->sc_compat_unknown = ltt_event_create(chan, &ev, filter,
+		chan->sc_compat_unknown = lttng_event_create(chan, &ev, filter,
 							   desc);
 		if (!chan->sc_compat_unknown) {
 			return -EINVAL;
@@ -373,10 +384,10 @@ int lttng_syscalls_register(struct ltt_channel *chan, void *filter)
 			&__event_desc___exit_syscall;
 
 		memset(&ev, 0, sizeof(ev));
-		strncpy(ev.name, desc->name, LTTNG_SYM_NAME_LEN);
-		ev.name[LTTNG_SYM_NAME_LEN - 1] = '\0';
+		strncpy(ev.name, desc->name, LTTNG_KERNEL_SYM_NAME_LEN);
+		ev.name[LTTNG_KERNEL_SYM_NAME_LEN - 1] = '\0';
 		ev.instrumentation = LTTNG_KERNEL_NOOP;
-		chan->sc_exit = ltt_event_create(chan, &ev, filter,
+		chan->sc_exit = lttng_event_create(chan, &ev, filter,
 						 desc);
 		if (!chan->sc_exit) {
 			return -EINVAL;
@@ -414,7 +425,7 @@ int lttng_syscalls_register(struct ltt_channel *chan, void *filter)
 /*
  * Only called at session destruction.
  */
-int lttng_syscalls_unregister(struct ltt_channel *chan)
+int lttng_syscalls_unregister(struct lttng_channel *chan)
 {
 	int ret;
 
@@ -429,7 +440,7 @@ int lttng_syscalls_unregister(struct ltt_channel *chan)
 			(void *) syscall_entry_probe, chan);
 	if (ret)
 		return ret;
-	/* ltt_event destroy will be performed by ltt_session_destroy() */
+	/* lttng_event destroy will be performed by lttng_session_destroy() */
 	kfree(chan->sc_table);
 #ifdef CONFIG_COMPAT
 	kfree(chan->compat_sc_table);

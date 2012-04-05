@@ -1,11 +1,23 @@
 /*
- * ltt-probes.c
- *
- * Copyright 2010 (c) - Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * lttng-probes.c
  *
  * Holds LTTng probes registry.
  *
- * Dual LGPL v2.1/GPL v2 license.
+ * Copyright (C) 2010-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; only
+ * version 2.1 of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <linux/module.h>
@@ -13,7 +25,7 @@
 #include <linux/mutex.h>
 #include <linux/seq_file.h>
 
-#include "ltt-events.h"
+#include "lttng-events.h"
 
 static LIST_HEAD(probe_list);
 static DEFINE_MUTEX(probe_mutex);
@@ -33,7 +45,7 @@ const struct lttng_event_desc *find_event(const char *name)
 	return NULL;
 }
 
-int ltt_probe_register(struct lttng_probe_desc *desc)
+int lttng_probe_register(struct lttng_probe_desc *desc)
 {
 	int ret = 0;
 	int i;
@@ -54,17 +66,17 @@ end:
 	mutex_unlock(&probe_mutex);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ltt_probe_register);
+EXPORT_SYMBOL_GPL(lttng_probe_register);
 
-void ltt_probe_unregister(struct lttng_probe_desc *desc)
+void lttng_probe_unregister(struct lttng_probe_desc *desc)
 {
 	mutex_lock(&probe_mutex);
 	list_del(&desc->head);
 	mutex_unlock(&probe_mutex);
 }
-EXPORT_SYMBOL_GPL(ltt_probe_unregister);
+EXPORT_SYMBOL_GPL(lttng_probe_unregister);
 
-const struct lttng_event_desc *ltt_event_get(const char *name)
+const struct lttng_event_desc *lttng_event_get(const char *name)
 {
 	const struct lttng_event_desc *event;
 	int ret;
@@ -78,13 +90,13 @@ const struct lttng_event_desc *ltt_event_get(const char *name)
 	WARN_ON_ONCE(!ret);
 	return event;
 }
-EXPORT_SYMBOL_GPL(ltt_event_get);
+EXPORT_SYMBOL_GPL(lttng_event_get);
 
-void ltt_event_put(const struct lttng_event_desc *event)
+void lttng_event_put(const struct lttng_event_desc *event)
 {
 	module_put(event->owner);
 }
-EXPORT_SYMBOL_GPL(ltt_event_put);
+EXPORT_SYMBOL_GPL(lttng_event_put);
 
 static
 void *tp_list_start(struct seq_file *m, loff_t *pos)
@@ -132,9 +144,9 @@ int tp_list_show(struct seq_file *m, void *p)
 	const struct lttng_event_desc *probe_desc = p;
 
 	/*
-	 * Don't export lttng internal events (metadata).
+	 * Don't export lttng internal event: lttng_metadata.
 	 */
-	if (!strncmp(probe_desc->name, "lttng_", sizeof("lttng_") - 1))
+	if (!strcmp(probe_desc->name, "lttng_metadata"))
 		return 0;
 	seq_printf(m,	"event { name = %s; };\n",
 		   probe_desc->name);

@@ -1,26 +1,39 @@
 /*
- * (C) Copyright	2009-2011 -
- * 		Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ * lttng-context-tid.c
  *
  * LTTng TID context.
  *
- * Dual LGPL v2.1/GPL v2 license.
+ * Copyright (C) 2009-2012 Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; only
+ * version 2.1 of the License.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/sched.h>
-#include "ltt-events.h"
+#include "lttng-events.h"
 #include "wrapper/ringbuffer/frontend_types.h"
 #include "wrapper/vmalloc.h"
-#include "ltt-tracer.h"
+#include "lttng-tracer.h"
 
 static
 size_t tid_get_size(size_t offset)
 {
 	size_t size = 0;
 
-	size += lib_ring_buffer_align(offset, ltt_alignof(pid_t));
+	size += lib_ring_buffer_align(offset, lttng_alignof(pid_t));
 	size += sizeof(pid_t);
 	return size;
 }
@@ -28,12 +41,12 @@ size_t tid_get_size(size_t offset)
 static
 void tid_record(struct lttng_ctx_field *field,
 		 struct lib_ring_buffer_ctx *ctx,
-		 struct ltt_channel *chan)
+		 struct lttng_channel *chan)
 {
 	pid_t tid;
 
 	tid = task_pid_nr(current);
-	lib_ring_buffer_align_ctx(ctx, ltt_alignof(tid));
+	lib_ring_buffer_align_ctx(ctx, lttng_alignof(tid));
 	chan->ops->event_write(ctx, &tid, sizeof(tid));
 }
 
@@ -51,7 +64,7 @@ int lttng_add_tid_to_ctx(struct lttng_ctx **ctx)
 	field->event_field.name = "tid";
 	field->event_field.type.atype = atype_integer;
 	field->event_field.type.u.basic.integer.size = sizeof(pid_t) * CHAR_BIT;
-	field->event_field.type.u.basic.integer.alignment = ltt_alignof(pid_t) * CHAR_BIT;
+	field->event_field.type.u.basic.integer.alignment = lttng_alignof(pid_t) * CHAR_BIT;
 	field->event_field.type.u.basic.integer.signedness = is_signed_type(pid_t);
 	field->event_field.type.u.basic.integer.reverse_byte_order = 0;
 	field->event_field.type.u.basic.integer.base = 10;
