@@ -221,6 +221,11 @@ struct regmap *regmap_init(struct device *dev,
 	map->format.pad_bytes = config->pad_bits / 8;
 	map->format.val_bytes = DIV_ROUND_UP(config->val_bits, 8);
 	map->format.buf_size += map->format.pad_bytes;
+	map->reg_shift = config->pad_bits % 8;
+	if (config->reg_stride)
+		map->reg_stride = config->reg_stride;
+	else
+		map->reg_stride = 1;
 	map->dev = dev;
 	map->bus = bus;
 	map->bus_context = bus_context;
@@ -443,7 +448,8 @@ static int _regmap_raw_write(struct regmap *map, unsigned int reg,
 	/* Check for unwritable registers before we start */
 	if (map->writeable_reg)
 		for (i = 0; i < val_len / map->format.val_bytes; i++)
-			if (!map->writeable_reg(map->dev, reg + i))
+			if (!map->writeable_reg(map->dev,
+						reg + (i * map->reg_stride)))
 				return -EINVAL;
 
 	if (!map->cache_bypass && map->format.parse_val) {
@@ -452,7 +458,8 @@ static int _regmap_raw_write(struct regmap *map, unsigned int reg,
 		for (i = 0; i < val_len / val_bytes; i++) {
 			memcpy(map->work_buf, val + (i * val_bytes), val_bytes);
 			ival = map->format.parse_val(map->work_buf);
-			ret = regcache_write(map, reg + i, ival);
+			ret = regcache_write(map, reg + (i * map->reg_stride),
+					     ival);
 			if (ret) {
 				dev_err(map->dev,
 				   "Error in caching of register: %u ret: %d\n",
@@ -564,6 +571,9 @@ int regmap_write(struct regmap *map, unsigned int reg, unsigned int val)
 {
 	int ret;
 
+	if (reg % map->reg_stride)
+		return -EINVAL;
+
 	map->lock(map);
 
 	ret = _regmap_write(map, reg, val);
@@ -594,6 +604,11 @@ int regmap_raw_write(struct regmap *map, unsigned int reg,
 		     const void *val, size_t val_len)
 {
 	int ret;
+
+	if (val_len % map->format.val_bytes)
+		return -EINVAL;
+	if (reg % map->reg_stride)
+		return -EINVAL;
 
 	map->lock(map);
 
@@ -627,6 +642,8 @@ int regmap_bulk_write(struct regmap *map, unsigned int reg, const void *val,
 	void *wval;
 
 	if (!map->format.parse_val)
+		return -EINVAL;
+	if (reg % map->reg_stride)
 		return -EINVAL;
 
 	map->lock(map);
@@ -724,6 +741,9 @@ int regmap_read(struct regmap *map, unsigned int reg, unsigned int *val)
 {
 	int ret;
 
+	if (reg % map->reg_stride)
+		return -EINVAL;
+
 	map->lock(map);
 
 	ret = _regmap_read(map, reg, val);
@@ -753,6 +773,11 @@ int regmap_raw_read(struct regmap *map, unsigned int reg, void *val,
 	unsigned int v;
 	int ret, i;
 
+	if (val_len % map->format.val_bytes)
+		return -EINVAL;
+	if (reg % map->reg_stride)
+		return -EINVAL;
+
 	map->lock(map);
 
 	if (regmap_volatile_range(map, reg, val_count) || map->cache_bypass ||
@@ -765,7 +790,8 @@ int regmap_raw_read(struct regmap *map, unsigned int reg, void *val,
 		 * cost as we expect to hit the cache.
 		 */
 		for (i = 0; i < val_count; i++) {
-			ret = _regmap_read(map, reg + i, &v);
+			ret = _regmap_read(map, reg + (i * map->reg_stride),
+					   &v);
 			if (ret != 0)
 				goto out;
 
@@ -800,6 +826,8 @@ int regmap_bulk_read(struct regmap *map, unsigned int reg, void *val,
 
 	if (!map->format.parse_val)
 		return -EINVAL;
+	if (reg % map->reg_stride)
+		return -EINVAL;
 
 	if (vol || map->cache_type == REGCACHE_NONE) {
 		ret = regmap_raw_read(map, reg, val, val_bytes * val_count);
@@ -812,6 +840,8 @@ int regmap_bulk_read(struct regmap *map, unsigned int reg, void *val,
 		for (i = 0; i < val_count; i++) {
 			unsigned int ival;
 			ret = regmap_read(map, reg + i, &ival);
+			ret = regmap_read(map, reg + (i * map->reg_stride),
+					  val + (i * val_bytes));
 			if (ret != 0)
 				return ret;
 			memcpy(val + (i * val_bytes), &ival, val_bytes);
