@@ -505,165 +505,9 @@ err:
 	dev_err(&mmc->class_dev, "failed to initialize debugfs for slot\n");
 }
 
-#if defined(CONFIG_OF)
-static const struct of_device_id atmci_dt_ids[] = {
-	{ .compatible = "atmel,hsmci" },
-	{ /* sentinel */ }
-};
-
-MODULE_DEVICE_TABLE(of, atmci_dt_ids);
-
-static int atmci_dma_of_init(struct device_node *np,
-			     struct at_dma_slave *atslave)
-{
-	struct of_phandle_args  dma_spec;
-	struct device_node	*dmac_np;
-	struct platform_device	*dmac_pdev;
-	const __be32		*nbcells;
-	int			ret;
-
-	ret = of_parse_phandle_with_args(np, "dma", "#dma-cells", 0, &dma_spec);
-	if (ret || !dma_spec.np) {
-		pr_err("%s: can't parse dma property (%d)\n", np->full_name, ret);
-		goto err0;
-	}
-	dmac_np = dma_spec.np;
-
-	/* check property format */
-	nbcells = of_get_property(dmac_np, "#dma-cells", NULL);
-	if (!nbcells) {
-		pr_err("%s: #dma-cells property is required\n", np->full_name);
-		ret = -EINVAL;
-		goto err1;
-	}
-
-	if (dma_spec.args_count != be32_to_cpup(nbcells)
-	 || dma_spec.args_count != 1) {
-		pr_err("%s: wrong #dma-cells for %s\n",
-		       np->full_name, dmac_np->full_name);
-		ret = -EINVAL;
-		goto err1;
-	}
-
-	/* retreive DMA controller information */
-	dmac_pdev = of_find_device_by_node(dmac_np);
-	if (!dmac_pdev) {
-		pr_err("%s: unable to find pdev from DMA controller\n",
-		       dmac_np->full_name);
-		ret = -EINVAL;
-		goto err1;
-	}
-
-	/* now fill in the at_dma_slave structure */
-	atslave->dma_dev = &dmac_pdev->dev;
-	atslave->cfg = dma_spec.args[0];
-
-err1:
-	of_node_put(dma_spec.np);
-err0:
-	pr_debug("%s exited with status %d\n", __func__, ret);
-	return ret;
-}
-
-static struct mci_platform_data __devinit*
-atmci_of_init(struct platform_device *pdev)
-{
-	struct device_node *np = pdev->dev.of_node;
-	struct device_node *cnp;
-	struct mci_platform_data *pdata;
-	struct at_dma_slave	 *atslave;
-	u32 slot_id;
-
-	if (!np) {
-		dev_err(&pdev->dev, "device node not found\n");
-		return ERR_PTR(-EINVAL);
-	}
-
-	pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
-	if (!pdata) {
-		dev_err(&pdev->dev, "could not allocate memory for pdata\n");
-		return ERR_PTR(-ENOMEM);
-	}
-
-	pdata->dma_slave = devm_kzalloc(&pdev->dev,
-					sizeof(*(pdata->dma_slave)),
-					GFP_KERNEL);
-	if (!pdata->dma_slave) {
-		dev_err(&pdev->dev, "could not allocate memory for dma_slave\n");
-		devm_kfree(&pdev->dev, pdata);
-		return ERR_PTR(-ENOMEM);
-	}
-	atslave = &pdata->dma_slave->sdata;
-
-	/* retrive DMA configuration first */
-	if (atmci_dma_of_init(np, atslave)) {
-		dev_err(&pdev->dev, "could not find DMA parameters\n");
-		devm_kfree(&pdev->dev, pdata->dma_slave);
-		devm_kfree(&pdev->dev, pdata);
-		return ERR_PTR(-EINVAL);
-	}
-
-	for_each_child_of_node(np, cnp) {
-		if (of_property_read_u32(cnp, "reg", &slot_id)) {
-			dev_warn(&pdev->dev, "reg property is missing for %s\n",
-				 cnp->full_name);
-			continue;
-		}
-
-		if (slot_id >= ATMCI_MAX_NR_SLOTS) {
-			dev_warn(&pdev->dev, "can't have more than %d slots\n",
-			         ATMCI_MAX_NR_SLOTS);
-			break;
-		}
-
-		if (of_property_read_u32(cnp, "bus-width",
-		                         &pdata->slot[slot_id].bus_width))
-			pdata->slot[slot_id].bus_width = 1;
-
-		pdata->slot[slot_id].detect_pin =
-			of_get_named_gpio(cnp, "cd-gpios", 0);
-
-		pdata->slot[slot_id].detect_is_active_high =
-			of_property_read_bool(cnp, "cd-inverted");
-
-		pdata->slot[slot_id].wp_pin =
-			of_get_named_gpio(cnp, "wp-gpios", 0);
-	}
-
-	return pdata;
-}
-#else /* CONFIG_OF */
-static inline struct mci_platform_data*
-atmci_of_init(struct platform_device *dev)
-{
-	return ERR_PTR(-EINVAL);
-}
-#endif
-
 static inline unsigned int atmci_get_version(struct atmel_mci *host)
 {
 	return atmci_readl(host, ATMCI_VERSION) & 0x00000fff;
-}
-
-static void atmci_timeout_timer(unsigned long data)
-{
-	struct atmel_mci *host;
-
-	host = (struct atmel_mci *)data;
-
-	dev_dbg(&host->pdev->dev, "software timeout\n");
-
-	if (host->mrq->cmd->data) {
-		host->mrq->cmd->data->error = -ETIMEDOUT;
-		host->data = NULL;
-	} else {
-		host->mrq->cmd->error = -ETIMEDOUT;
-		host->cmd = NULL;
-	}
-	host->need_reset = 1;
-	host->state = STATE_END_REQUEST;
-	smp_wmb();
-	tasklet_schedule(&host->tasklet);
 }
 
 static inline unsigned int atmci_ns_to_clocks(struct atmel_mci *host,
@@ -866,18 +710,13 @@ static void atmci_pdc_cleanup(struct atmel_mci *host)
 static void atmci_pdc_complete(struct atmel_mci *host)
 {
 	int transfer_size = host->data->blocks * host->data->blksz;
-	int i;
 
 	atmci_writel(host, ATMEL_PDC_PTCR, ATMEL_PDC_RXTDIS | ATMEL_PDC_TXTDIS);
 
 	if ((!host->caps.has_rwproof)
-	    && (host->data->flags & MMC_DATA_READ)) {
-		if (host->caps.has_bad_data_ordering)
-			for (i = 0; i < transfer_size; i++)
-				host->buffer[i] = swab32(host->buffer[i]);
+	    && (host->data->flags & MMC_DATA_READ))
 		sg_copy_from_buffer(host->data->sg, host->data->sg_len,
 		                    host->buffer, transfer_size);
-	}
 
 	atmci_pdc_cleanup(host);
 
@@ -1032,13 +871,9 @@ atmci_prepare_data_pdc(struct atmel_mci *host, struct mmc_data *data)
 	sg_len = dma_map_sg(&host->pdev->dev, data->sg, data->sg_len, dir);
 
 	if ((!host->caps.has_rwproof)
-	    && (host->data->flags & MMC_DATA_WRITE)) {
+	    && (host->data->flags & MMC_DATA_WRITE))
 		sg_copy_to_buffer(host->data->sg, host->data->sg_len,
 		                  host->buffer, host->data_size);
-		if (host->caps.has_bad_data_ordering)
-			for (i = 0; i < host->data_size; i++)
-				host->buffer[i] = swab32(host->buffer[i]);
-	}
 
 	if (host->data_size)
 		atmci_pdc_set_both_buf(host,
