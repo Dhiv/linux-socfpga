@@ -2320,6 +2320,8 @@ static int __init atmci_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, host);
 
+	setup_timer(&host->timer, atmci_timeout_timer, (unsigned long)host);
+
 	/* We need at least one slot to succeed */
 	nr_slots = 0;
 	ret = -ENODEV;
@@ -2357,8 +2359,6 @@ static int __init atmci_probe(struct platform_device *pdev)
 			goto err_init_slot;
 		}
 	}
-
-	setup_timer(&host->timer, atmci_timeout_timer, (unsigned long)host);
 
 	dev_info(&pdev->dev,
 			"Atmel MCI controller at 0x%08lx irq %d, %u slots\n",
