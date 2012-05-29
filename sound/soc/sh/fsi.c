@@ -1090,13 +1090,10 @@ static void fsi_dma_do_work(struct work_struct *work)
 {
 	struct fsi_stream *io = container_of(work, struct fsi_stream, work);
 	struct fsi_priv *fsi = fsi_stream_to_priv(io);
-	struct dma_chan *chan;
 	struct snd_soc_dai *dai;
 	struct dma_async_tx_descriptor *desc;
-	struct scatterlist sg;
 	struct snd_pcm_runtime *runtime;
 	enum dma_data_direction dir;
-	dma_cookie_t cookie;
 	int is_play = fsi_stream_is_play(fsi, io);
 	int len;
 	dma_addr_t buf;
@@ -1105,7 +1102,6 @@ static void fsi_dma_do_work(struct work_struct *work)
 		return;
 
 	dai	= fsi_get_dai(io->substream);
-	chan	= io->chan;
 	runtime	= io->substream->runtime;
 	dir	= is_play ? DMA_TO_DEVICE : DMA_FROM_DEVICE;
 	len	= samples_to_bytes(runtime, io->period_samples);
@@ -1113,14 +1109,8 @@ static void fsi_dma_do_work(struct work_struct *work)
 
 	dma_sync_single_for_device(dai->dev, buf, len, dir);
 
-	sg_init_table(&sg, 1);
-	sg_set_page(&sg, pfn_to_page(PFN_DOWN(buf)),
-		    len , offset_in_page(buf));
-	sg_dma_address(&sg) = buf;
-	sg_dma_len(&sg) = len;
-
-	desc = dmaengine_prep_slave_sg(chan, &sg, 1, dir,
-				       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
+	desc = dmaengine_prep_slave_single(io->chan, buf, len, dir,
+					   DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
 	if (!desc) {
 		dev_err(dai->dev, "dmaengine_prep_slave_sg() fail\n");
 		return;
@@ -1129,13 +1119,12 @@ static void fsi_dma_do_work(struct work_struct *work)
 	desc->callback		= fsi_dma_complete;
 	desc->callback_param	= io;
 
-	cookie = desc->tx_submit(desc);
-	if (cookie < 0) {
+	if (dmaengine_submit(desc) < 0) {
 		dev_err(dai->dev, "tx_submit() fail\n");
 		return;
 	}
 
-	dma_async_issue_pending(chan);
+	dma_async_issue_pending(io->chan);
 
 	/*
 	 * FIXME
