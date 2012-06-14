@@ -54,6 +54,7 @@
 #include <linux/mmc/mmc.h>
 #include <linux/mmc/sdio.h>
 #include <linux/mmc/sh_mmcif.h>
+#include <linux/mmc/slot-gpio.h>
 #include <linux/mod_devicetable.h>
 #include <linux/pagemap.h>
 #include <linux/platform_device.h>
@@ -1008,6 +1009,10 @@ static int sh_mmcif_get_cd(struct mmc_host *mmc)
 {
 	struct sh_mmcif_host *host = mmc_priv(mmc);
 	struct sh_mmcif_plat_data *p = host->pd->dev.platform_data;
+	int ret = mmc_gpio_get_cd(mmc);
+
+	if (ret >= 0)
+		return ret;
 
 	if (!p || !p->get_cd)
 		return -ENOSYS;
@@ -1380,6 +1385,12 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
 		goto ereqirq1;
 	}
 
+	if (pd && pd->use_cd_gpio) {
+		ret = mmc_gpio_request_cd(mmc, pd->cd_gpio);
+		if (ret < 0)
+			goto erqcd;
+	}
+
 	clk_disable(host->hclk);
 	ret = mmc_add_host(mmc);
 	if (ret < 0)
@@ -1393,6 +1404,9 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
 	return ret;
 
 emmcaddh:
+	if (pd && pd->use_cd_gpio)
+		mmc_gpio_free_cd(mmc);
+erqcd:
 	free_irq(irq[1], host);
 ereqirq1:
 	free_irq(irq[0], host);
@@ -1413,6 +1427,7 @@ ealloch:
 static int __devexit sh_mmcif_remove(struct platform_device *pdev)
 {
 	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
+	struct sh_mmcif_plat_data *pd = pdev->dev.platform_data;
 	int irq[2];
 
 	host->dying = true;
@@ -1420,6 +1435,9 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
 	pm_runtime_get_sync(&pdev->dev);
 
 	dev_pm_qos_hide_latency_limit(&pdev->dev);
+
+	if (pd && pd->use_cd_gpio)
+		mmc_gpio_free_cd(host->mmc);
 
 	mmc_remove_host(host->mmc);
 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
