@@ -1578,6 +1578,8 @@ struct security_operations {
 
 #ifdef CONFIG_SECURITY_NETWORK
 	int (*unix_stream_connect) (struct sock *sock, struct sock *other, struct sock *newsk);
+	int (*bus_connect) (struct sock *sock, struct sock *other,
+			    struct sock *newsk);
 	int (*unix_may_send) (struct socket *sock, struct socket *other);
 
 	int (*socket_create) (int family, int type, int protocol, int kern);
@@ -2517,6 +2519,8 @@ static inline int security_inode_getsecctx(struct inode *inode, void **ctx, u32 
 #ifdef CONFIG_SECURITY_NETWORK
 
 int security_unix_stream_connect(struct sock *sock, struct sock *other, struct sock *newsk);
+int security_bus_connect(struct sock *sock, struct sock *other,
+			 struct sock *newsk);
 int security_unix_may_send(struct socket *sock,  struct socket *other);
 int security_socket_create(int family, int type, int protocol, int kern);
 int security_socket_post_create(struct socket *sock, int family,
@@ -2560,6 +2564,13 @@ int security_tun_dev_attach(struct sock *sk);
 static inline int security_unix_stream_connect(struct sock *sock,
 					       struct sock *other,
 					       struct sock *newsk)
+{
+	return 0;
+}
+
+static inline int security_bus_connect(struct socket *sock,
+				       struct sock *other,
+				       struct sock *newsk)
 {
 	return 0;
 }

@@ -563,6 +563,12 @@ static int cap_unix_may_send(struct socket *sock, struct socket *other)
 	return 0;
 }
 
+static int cap_bus_connect(struct sock *sock, struct sock *other,
+			   struct sock *newsk)
+{
+	return 0;
+}
+
 static int cap_socket_create(int family, int type, int protocol, int kern)
 {
 	return 0;
@@ -1015,6 +1021,7 @@ void __init security_fixup_ops(struct security_operations *ops)
 #ifdef CONFIG_SECURITY_NETWORK
 	set_to_cap_if_null(ops, unix_stream_connect);
 	set_to_cap_if_null(ops, unix_may_send);
+	set_to_cap_if_null(ops, bus_connect);
 	set_to_cap_if_null(ops, socket_create);
 	set_to_cap_if_null(ops, socket_post_create);
 	set_to_cap_if_null(ops, socket_bind);
