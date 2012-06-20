@@ -118,6 +118,38 @@ nlmsg_failure:
 EXPORT_SYMBOL_GPL(cn_netlink_send);
 
 /*
+ * Send an unicast reply from a connector callback
+ *
+ */
+int cn_netlink_reply(struct cn_msg *msg, u32 pid, gfp_t gfp_mask)
+{
+	unsigned int size;
+	struct sk_buff *skb;
+	struct nlmsghdr *nlh;
+	struct cn_msg *data;
+	struct cn_dev *dev = &cdev;
+
+	size = NLMSG_SPACE(sizeof(*msg) + msg->len);
+
+	skb = alloc_skb(size, gfp_mask);
+	if (!skb)
+		return -ENOMEM;
+
+	nlh = nlmsg_put(skb, 0, msg->seq, NLMSG_DONE, size - sizeof(*nlh), 0);
+	if (nlh == NULL) {
+		kfree_skb(skb);
+		return -EMSGSIZE;
+	}
+
+	data = nlmsg_data(nlh);
+
+	memcpy(data, msg, sizeof(*data) + msg->len);
+
+	return netlink_unicast(dev->nls, skb, pid, 1);
+}
+EXPORT_SYMBOL_GPL(cn_netlink_reply);
+
+/*
  * Callback helper - queues work and setup destructor for given data.
  */
 static int cn_call_callback(struct sk_buff *skb)
