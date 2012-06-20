@@ -158,7 +158,8 @@ int __scm_send(struct socket *sock, struct msghdr *msg, struct scm_cookie *p)
 		switch (cmsg->cmsg_type)
 		{
 		case SCM_RIGHTS:
-			if (!sock->ops || sock->ops->family != PF_UNIX)
+			if (!sock->ops || (sock->ops->family != PF_UNIX &&
+					   sock->ops->family != PF_BUS))
 				goto error;
 			err=scm_fp_copy(cmsg, &p->fp);
 			if (err<0)
