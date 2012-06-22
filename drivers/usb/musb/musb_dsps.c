@@ -378,8 +378,8 @@ static int dsps_musb_init(struct musb *musb)
 
 	/* NOP driver needs change if supporting dual instance */
 	usb_nop_xceiv_register();
-	musb->xceiv = usb_get_phy(USB_PHY_TYPE_USB2);
-	if (IS_ERR_OR_NULL(musb->xceiv))
+	musb->xceiv = usb_get_phy();
+	if (!musb->xceiv)
 		return -ENODEV;
 
 	/* Returns zero if e.g. not clocked */
