@@ -1,0 +1,12 @@
+#
+# Netfilter D-Bus module configuration
+#
+config NETFILTER_DBUS
+	tristate "Netfilter D-bus (EXPERIMENTAL)"
+	depends on AF_BUS && CONNECTOR && EXPERIMENTAL
+	---help---
+	  If you say Y here, you will include support for a netfilter hook to
+	  parse D-Bus messages sent using the AF_BUS socket address family.
+
+	  To compile this as a module, choose M here: the module will be
+	  called netfilter_dbus.

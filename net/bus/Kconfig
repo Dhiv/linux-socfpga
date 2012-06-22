@@ -13,3 +13,5 @@ config AF_BUS
 	  called bus.
 
 	  Say N unless you know what you are doing.
+
+source "net/bus/nfdbus/Kconfig"
