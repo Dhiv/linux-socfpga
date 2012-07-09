@@ -9,8 +9,8 @@ obj-m += lttng-ring-buffer-client-mmap-discard.o
 obj-m += lttng-ring-buffer-client-mmap-overwrite.o
 obj-m += lttng-ring-buffer-metadata-mmap-client.o
 
-obj-m += lttng-relay.o
-lttng-relay-objs :=  lttng-events.o lttng-abi.o \
+obj-m += lttng-tracer.o
+lttng-tracer-objs :=  lttng-events.o lttng-abi.o \
 			lttng-probes.o lttng-context.o \
 			lttng-context-pid.o lttng-context-procname.o \
 			lttng-context-prio.o lttng-context-nice.o \
@@ -23,11 +23,11 @@ obj-m += lttng-statedump.o
 lttng-statedump-objs := lttng-statedump-impl.o wrapper/irqdesc.o
 
 ifneq ($(CONFIG_HAVE_SYSCALL_TRACEPOINTS),)
-lttng-relay-objs += lttng-syscalls.o
+lttng-tracer-objs += lttng-syscalls.o
 endif
 
 ifneq ($(CONFIG_PERF_EVENTS),)
-lttng-relay-objs += $(shell \
+lttng-tracer-objs += $(shell \
 	if [ $(VERSION) -ge 3 \
 		-o \( $(VERSION) -eq 2 -a $(PATCHLEVEL) -ge 6 -a $(SUBLEVEL) -ge 33 \) ] ; then \
 		echo "lttng-context-perf-counters.o" ; fi;)
