@@ -18,6 +18,7 @@
 #include <linux/platform_device.h>
 #include <linux/dma-mapping.h>
 #include <linux/prefetch.h>
+#include <linux/usb/nop-usb-xceiv.h>
 
 #include <asm/cacheflush.h>
 
