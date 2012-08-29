@@ -647,6 +647,16 @@ static int __devexit ohci_hcd_at91_drv_remove(struct platform_device *pdev)
 
 	if (pdata) {
 		at91_for_each_port(i) {
+			/*
+			 * do not configure PIO if not in relation with
+			 * real USB port on board
+			 */
+			if (i >= pdata->ports) {
+				pdata->vbus_pin[i] = -EINVAL;
+				pdata->overcurrent_pin[i] = -EINVAL;
+				break;
+			}
+
 			if (!gpio_is_valid(pdata->vbus_pin[i]))
 				continue;
 			ohci_at91_usb_set_power(pdata, i, 0);
