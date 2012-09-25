@@ -21,8 +21,13 @@
 #include <asm/mach-types.h>
 #include <mach/common.h>
 
+#ifdef CONFIG_ARCH_SH73A0
 #define is_sh73a0() (machine_is_ag5evm() || machine_is_kota2() || \
 			of_machine_is_compatible("renesas,sh73a0"))
+#else
+#define is_sh73a0() (0)
+#endif
+
 #define is_r8a7779() machine_is_marzen()
 
 static unsigned int __init shmobile_smp_get_core_count(void)
