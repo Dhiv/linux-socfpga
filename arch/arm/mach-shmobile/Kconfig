@@ -112,6 +112,10 @@ config MACH_MARZEN
 	depends on ARCH_R8A7779
 	select ARCH_REQUIRE_GPIOLIB
 
+config MACH_KZM9D
+	bool "KZM9D board"
+	depends on ARCH_EMEV2
+
 config MACH_KZM9G
 	bool "KZM-A9-GT board"
 	depends on ARCH_SH73A0
