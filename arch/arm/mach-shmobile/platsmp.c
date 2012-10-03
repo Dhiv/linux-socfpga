@@ -30,7 +30,12 @@
 #endif
 
 #define is_r8a7779() machine_is_marzen()
+
+#ifdef CONFIG_ARCH_EMEV2
 #define is_emev2() of_machine_is_compatible("renesas,emev2")
+#else
+#define is_emev2() (0)
+#endif
 
 static unsigned int __init shmobile_smp_get_core_count(void)
 {
