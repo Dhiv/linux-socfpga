@@ -33,6 +33,10 @@
 #include <linux/bitops.h>
 #include <linux/regulator/consumer.h>
 #include <linux/workqueue.h>
+#include <linux/of.h>
+#include <linux/of_platform.h>
+#include <linux/of_address.h>
+#include <linux/of_irq.h>
 
 #include "dw_mmc.h"
 
@@ -2017,12 +2021,45 @@ int dw_mci_probe(struct dw_mci *host)
 {
 	int width, i, ret = 0;
 	u32 fifo_size;
+#ifdef CONFIG_OF
+	u32 prop;
+#endif
 
 	if (!host->pdata || !host->pdata->init) {
 		dev_err(&host->dev,
 			"Platform data must supply init function\n");
 		return -ENODEV;
 	}
+
+#ifdef CONFIG_OF
+	if (of_property_read_u32(host->dev.of_node, "bus-hz", &prop)) {
+		dev_err(&host->dev, "couldn't determine bus-hz\n");
+		return -ENODEV;
+	}
+	host->pdata->bus_hz = prop;
+
+	if (of_property_read_u32(host->dev.of_node, "num-slots", &prop)) {
+		dev_err(&host->dev, "couldn't determine num-slots\n");
+		return -ENODEV;
+	}
+	host->pdata->num_slots = prop;
+
+	/* Optional parameter. */
+	if (!of_property_read_u32(host->dev.of_node, "fifo-depth", &prop)) {
+		host->pdata->fifo_depth = prop;
+	}
+
+	if (of_property_read_u32(host->dev.of_node, "bus-width", &prop)) {
+		dev_err(&host->dev, "couldn't determine bus-width\n");
+		return -ENODEV;
+	}
+
+	if (prop == 8)
+		host->pdata->caps |= (MMC_CAP_4_BIT_DATA |
+					MMC_CAP_8_BIT_DATA);
+	else if (prop == 4)
+		host->pdata->caps |= MMC_CAP_4_BIT_DATA;
+#endif
 
 	if (!host->pdata->select_slot && host->pdata->num_slots > 1) {
 		dev_err(&host->dev,
