@@ -41,6 +41,7 @@
 #define	OPCODE_WRSR		0x01	/* Write status register 1 byte */
 #define	OPCODE_NORM_READ	0x03	/* Read data bytes (low frequency) */
 #define	OPCODE_FAST_READ	0x0b	/* Read data bytes (high frequency) */
+#define  OPCODE_FAST_READ_QUAD_OUTPUT   0x6b    /* Read data bytes (quad) */
 #define	OPCODE_PP		0x02	/* Page program (up to 256 bytes) */
 #define	OPCODE_BE_4K		0x20	/* Erase 4KiB block */
 #define	OPCODE_BE_32K		0x52	/* Erase 32KiB block */
@@ -60,6 +61,15 @@
 /* Used for Spansion flashes only. */
 #define	OPCODE_BRWR		0x17	/* Bank register write */
 
+/* Used for Numonyx flashes only */
+#define NUMONYX_ID             0x20
+#define OPCODE_RVCR            0x85    /* Read volatile configuration register */
+#define OPCODE_WVCR            0x81    /* Write volatile configuration register */
+#define VCR_XIP_SHIFT                  0x03
+#define VCR_XIP_MASK                   0x08
+#define VCR_DUMMY_CLK_CYCLES_SHIFT     0x04
+#define VCR_DUMMY_CLK_CYCLES_MASK      0xf0
+
 /* Status Register bits. */
 #define	SR_WIP			1	/* Write in progress */
 #define	SR_WEL			2	/* Write enable latch */
@@ -73,7 +83,10 @@
 #define	MAX_READY_WAIT_JIFFIES	(40 * HZ)	/* M25P16 specs 40s max chip erase */
 #define	MAX_CMD_SIZE		5
 
-#ifdef CONFIG_M25PXX_USE_FAST_READ
+#ifdef CONFIG_M25PXX_USE_FAST_READ_QUAD_OUTPUT
+#define OPCODE_READ    OPCODE_FAST_READ_QUAD_OUTPUT
+#define FAST_READ_DUMMY_BYTE 1
+#elif defined CONFIG_M25PXX_USE_FAST_READ
 #define OPCODE_READ 	OPCODE_FAST_READ
 #define FAST_READ_DUMMY_BYTE 1
 #else
@@ -568,6 +581,43 @@ time_out:
 	return ret;
 }
 
+/* Numonyx set VCR register */
+#if (defined CONFIG_M25PXX_USE_FAST_READ ||    \
+       defined CONFIG_M25PXX_USE_FAST_READ_QUAD_OUTPUT)
+static int numonyx_set_vcr(struct m25p *flash, unsigned char clk_cycles,
+       unsigned char xip)
+{
+       ssize_t retval;
+       u8 code = OPCODE_RVCR;
+       u8 val;
+
+       write_enable(flash);
+
+       retval = spi_write_then_read(flash->spi, &code, 1, &val, 1);
+
+       if (retval < 0) {
+               dev_err(&flash->spi->dev, "error %d reading SR\n",
+                               (int) retval);
+               return retval;
+       }
+
+       val &= ~VCR_DUMMY_CLK_CYCLES_MASK;
+       val |=  (clk_cycles << VCR_DUMMY_CLK_CYCLES_SHIFT) &
+                       VCR_DUMMY_CLK_CYCLES_MASK;
+
+       if (xip) {
+               val |= VCR_XIP_MASK;
+       } else {
+               val &= ~VCR_XIP_MASK;
+       }
+
+       flash->command[0] = OPCODE_WVCR;
+       flash->command[1] = val;
+
+       return spi_write(flash->spi, flash->command, 2);
+}
+#endif
+
 /****************************************************************************/
 
 /*
@@ -643,6 +693,10 @@ static const struct spi_device_id m25p_ids[] = {
 	{ "160s33b",  INFO(0x898911, 0, 64 * 1024,  32, 0) },
 	{ "320s33b",  INFO(0x898912, 0, 64 * 1024,  64, 0) },
 	{ "640s33b",  INFO(0x898913, 0, 64 * 1024, 128, 0) },
+	{ "n25q064",  INFO(0x20ba17, 0, 64 * 1024, 128, 0) },
+	
+	/* Micron/Numonyx */
+	{ "n25q128",  INFO(0x20ba18, 0, 64 * 1024, 256, 0) },
 
 	/* Macronix */
 	{ "mx25l4005a",  INFO(0xc22013, 0, 64 * 1024,   8, SECT_4K) },
@@ -868,6 +922,17 @@ static int __devinit m25p_probe(struct spi_device *spi)
 		write_sr(flash, 0);
 	}
 
+#if (defined CONFIG_M25PXX_USE_FAST_READ ||            \
+       defined CONFIG_M25PXX_USE_FAST_READ_QUAD_OUTPUT)
+       /* Set VCR register dummy clocks if fast read and quad read is enabled.
+        * Numonyx flash has default 15 dummy clock cycles. Change dummy clock
+        * to 8 clock cycles (byte aligned). */
+       if (JEDEC_MFR(info->jedec_id) == NUMONYX_ID) {
+               /* Multiply 8 to convert dummy bytes to dummy clocks. */
+               numonyx_set_vcr(flash, FAST_READ_DUMMY_BYTE * 8, 0);
+       }
+#endif
+
 	if (data && data->name)
 		flash->mtd.name = data->name;
 	else
@@ -913,6 +978,8 @@ static int __devinit m25p_probe(struct spi_device *spi)
 		} else
 			flash->addr_width = 3;
 	}
+
+	spi->addr_width = flash->addr_width;
 
 	dev_info(&spi->dev, "%s (%lld Kbytes)\n", id->name,
 			(long long)flash->mtd.size >> 10);
