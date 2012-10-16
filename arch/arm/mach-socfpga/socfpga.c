@@ -110,6 +110,7 @@ DT_MACHINE_START(SOCFPGA, "Altera SOCFPGA")
 	.init_irq	= gic_init_irq,
 	.handle_irq     = gic_handle_irq,
 	.timer		= &dw_apb_timer,
+	.nr_irqs		= SOCFPGA_NR_IRQS,
 	.init_machine	= socfpga_cyclone5_init,
 	.restart	= socfpga_cyclone5_restart,
 	.dt_compat	= altera_dt_match,
