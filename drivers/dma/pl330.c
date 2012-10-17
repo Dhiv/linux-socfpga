@@ -2916,6 +2916,12 @@ pl330_probe(struct amba_device *adev, const struct amba_id *id)
 	if (ret)
 		goto probe_err3;
 
+	if (pdat->init) {
+		ret = pdat->init(adev);
+		if (ret)
+			goto probe_err3;
+	}
+
 	ret = pl330_add(pi);
 	if (ret)
 		goto probe_err4;
@@ -3017,6 +3023,7 @@ probe_err1:
 static int __devexit pl330_remove(struct amba_device *adev)
 {
 	struct dma_pl330_dmac *pdmac = amba_get_drvdata(adev);
+	struct dma_pl330_platdata *pdat = adev->dev.platform_data;
 	struct dma_pl330_chan *pch, *_p;
 	struct pl330_info *pi;
 	struct resource *res;
