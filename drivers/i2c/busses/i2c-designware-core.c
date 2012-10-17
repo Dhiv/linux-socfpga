@@ -370,7 +370,6 @@ i2c_dw_xfer_msg(struct dw_i2c_dev *dev)
 	u8 *buf = dev->tx_buf;
 
 	intr_mask = DW_IC_INTR_DEFAULT_MASK;
-
 	for (; dev->msg_write_idx < dev->msgs_num; dev->msg_write_idx++) {
 		/*
 		 * if target address has changed, we need to
@@ -401,11 +400,21 @@ i2c_dw_xfer_msg(struct dw_i2c_dev *dev)
 		rx_limit = dev->rx_fifo_depth - dw_readl(dev, DW_IC_RXFLR);
 
 		while (buf_len > 0 && tx_limit > 0 && rx_limit > 0) {
+			int msg_idx = dev->msg_write_idx + dev->msg_read_idx+1;
 			if (msgs[dev->msg_write_idx].flags & I2C_M_RD) {
-				dw_writel(dev, 0x100, DW_IC_DATA_CMD);
+				if(buf_len > 1 || msg_idx < dev->msgs_num)
+					dw_writel(dev, 0x100, DW_IC_DATA_CMD);
+				else
+					dw_writel(dev, 0x100|0x200,
+						DW_IC_DATA_CMD);
 				rx_limit--;
-			} else
-				dw_writel(dev, *buf++, DW_IC_DATA_CMD);
+			} else {
+				if(buf_len > 1 || msg_idx < dev->msgs_num)
+					dw_writel(dev, *buf++, DW_IC_DATA_CMD);
+				else
+					dw_writel(dev, *buf++|0x200,
+						DW_IC_DATA_CMD);
+			}
 			tx_limit--; buf_len--;
 		}
 
@@ -636,8 +645,10 @@ irqreturn_t i2c_dw_isr(int this_irq, void *dev_id)
 	stat = dw_readl(dev, DW_IC_RAW_INTR_STAT);
 	dev_dbg(dev->dev, "%s:  %s enabled= 0x%x stat=0x%x\n", __func__,
 		dev->adapter.name, enabled, stat);
-	if (!enabled || !(stat & ~DW_IC_INTR_ACTIVITY))
+	if (!enabled || !(stat & ~DW_IC_INTR_ACTIVITY)) {
+		i2c_dw_read_clear_intrbits(dev);
 		return IRQ_NONE;
+	}
 
 	stat = i2c_dw_read_clear_intrbits(dev);
 
