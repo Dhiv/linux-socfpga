@@ -54,6 +54,23 @@ config STMMAC_DA
 	  By default, the DMA arbitration scheme is based on Round-robin
 	  (rx:tx priority is 1:1).
 
+config STMMAC_PHY_ID_ZERO_WORKAROUND
+	bool "STMMAC work around for non-existant phys returning 0"
+	default y
+	depends on STMMAC_ETH && ARCH_SOCFPGA
+	help
+	  Broken HW is sometimes missing the pull-up resistor on the
+	  MDIO line, which results in reads to non-existent devices returning
+	  0 rather than 0xffff.
+
+config STMMAC_SHARED_PHY_IRQ
+	bool "STMMAC and Phy have or'd IRQ"
+	default n
+	depends on STMMAC_ETH && ARCH_SOCFPGA
+	help
+	  Selecting this option means the IRQ lines for the STMMAC
+	  and its phy are hooked up to an or gate.
+
 config STMMAC_TIMER
 	bool "STMMAC Timer optimisation"
 	default n
