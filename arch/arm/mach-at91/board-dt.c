@@ -127,8 +127,6 @@ struct of_dev_auxdata at91_auxdata_lookup[] __initdata = {
 static const struct of_device_id irq_of_match[] __initconst = {
 
 	{ .compatible = "atmel,at91rm9200-aic", .data = at91_aic_of_init },
-	{ .compatible = "atmel,at91rm9200-gpio", .data = at91_gpio_of_irq_setup },
-	{ .compatible = "atmel,at91sam9x5-gpio", .data = at91_gpio_of_irq_setup },
 	{ /*sentinel*/ }
 };
 
