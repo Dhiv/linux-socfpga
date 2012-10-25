@@ -30,10 +30,6 @@
 
 #include "core.h"
 
-int pen_release = -1;
-
-static DEFINE_SPINLOCK(boot_lock);
-
 void __cpuinit platform_secondary_init(unsigned int cpu)
 {
 	/*
@@ -50,7 +46,8 @@ static int __cpuinit socfpga_boot_secondary(unsigned int cpu, struct task_struct
 
 	memcpy(phys_to_virt(0), &secondary_trampoline, trampoline_size);
 
-	__raw_writel(virt_to_phys(secondary_startup), (sys_manager_base_addr+0x10));
+	__raw_writel(virt_to_phys(secondary_startup),
+					(sys_manager_base_addr+0x10));
 
 	flush_cache_all();
 	smp_wmb();
@@ -77,8 +74,8 @@ static void __init socfpga_smp_init_cpus(void)
 
 	/* sanity check */
 	if (ncores > num_possible_cpus()) {
-		pr_warn("socfpga: no. of cores (%d) greater than configured"
-			"maximum of %d - clipping\n", ncores, num_possible_cpus());
+		pr_warn("# of cores (%d) greater maximum of %d\n",
+			ncores, num_possible_cpus());
 		ncores = num_possible_cpus();
 	}
 

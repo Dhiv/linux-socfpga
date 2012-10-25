@@ -31,6 +31,11 @@ extern void socfpga_secondary_startup(void);
 extern void socfpga_cpu_die(unsigned int cpu);
 extern void socfpga_init_clocks(void);
 
+extern char secondary_trampoline, secondary_trampoline_end;
+
 extern struct dw_mci_board sdmmc_platform_data;
+
+#define SOCFPGA_SCU_VIRT_BASE	0xfffec000
+#define SOCFPGA_SDMMC_BASE	0xff704000
 
 #endif /* __CORE_H */
