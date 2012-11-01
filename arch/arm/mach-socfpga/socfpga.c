@@ -135,6 +135,7 @@ static void __init socfpga_cyclone5_init(void)
 static const char *altera_dt_match[] = {
 	"altr,socfpga",
 	"altr,socfpga-cyclone5",
+	"altr,socfpga-vt",
 	NULL
 };
 
