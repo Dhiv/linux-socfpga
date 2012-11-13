@@ -154,6 +154,7 @@ static const char *altera_dt_match[] = {
 	"altr,socfpga",
 	"altr,socfpga-cyclone5",
 	"altr,socfpga-vt",
+	"altr,socfpga-ice",
 	NULL
 };
 
