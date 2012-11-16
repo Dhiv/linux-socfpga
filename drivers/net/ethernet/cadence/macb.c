@@ -31,12 +31,12 @@
 #include "macb.h"
 
 #define RX_BUFFER_SIZE		128
-#define RX_RING_SIZE		512
+#define RX_RING_SIZE		512 /* must be power of 2 */
 #define RX_RING_BYTES		(sizeof(struct macb_dma_desc) * RX_RING_SIZE)
 #define RX_BUFFERS_PER_PAGE	(PAGE_SIZE / RX_BUFFER_SIZE)
 #define RX_RING_PAGES		(RX_RING_SIZE / RX_BUFFERS_PER_PAGE)
 
-#define TX_RING_SIZE		128
+#define TX_RING_SIZE		128 /* must be power of 2 */
 #define TX_RING_BYTES		(sizeof(struct macb_dma_desc) * TX_RING_SIZE)
 
 /* minimum number of free TX descriptors before waking up TX process */
@@ -63,7 +63,7 @@ static unsigned int macb_tx_ring_wrap(unsigned int index)
 
 static unsigned int macb_tx_ring_avail(struct macb *bp)
 {
-	return TX_RING_SIZE - (bp->tx_head - bp->tx_tail);
+	return (bp->tx_tail - bp->tx_head) & (TX_RING_SIZE - 1);
 }
 
 static struct macb_dma_desc *macb_tx_desc(struct macb *bp, unsigned int index)
