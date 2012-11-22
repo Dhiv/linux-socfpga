@@ -30,6 +30,7 @@
 #include <linux/sh_timer.h>
 #include <linux/uio_driver.h>
 #include <linux/dma-contiguous.h>
+#include <video/sh_mobile_meram.h>
 #include <linux/dma-mapping.h>
 #include <mach/dma-register.h>
 #include <mach/r8a7740.h>
@@ -377,6 +378,36 @@ static struct platform_device ipmmu_device = {
 	.num_resources  = ARRAY_SIZE(ipmmu_resources),
 };
 
+/* MERAM */
+static struct sh_mobile_meram_info meram_info = {
+	.addr_mode	= SH_MOBILE_MERAM_MODE1,
+};
+
+static struct resource meram_resources[] = {
+	[0] = {
+		.name	= "MERAM",
+		.start	= 0xe8000000,
+		.end	= 0xe807ffff,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.name	= "MERAM",
+		.start	= 0xe8080000,
+		.end	= 0xe81fffff,
+		.flags	= IORESOURCE_MEM,
+	}
+};
+
+static struct platform_device meram_device = {
+	.name		= "sh_mobile_meram",
+	.id		= 0,
+	.num_resources	= ARRAY_SIZE(meram_resources),
+	.resource	= meram_resources,
+	.dev		= {
+		.platform_data = &meram_info,
+	},
+};
+
 static struct platform_device *r8a7740_early_devices[] __initdata = {
 	&scif0_device,
 	&scif1_device,
@@ -392,6 +423,7 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
 	&vpc_device,
 	&vio_device,
 	&ipmmu_device,
+	&meram_device,
 
 };
 
