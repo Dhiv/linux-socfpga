@@ -175,6 +175,12 @@ endmenu
 config SH_CLK_CPG
 	bool
 
+config SHMOBILE_IPMMU
+	bool
+
+config SHMOBILE_IPMMU_TLB
+	bool
+
 source "drivers/sh/Kconfig"
 
 endif

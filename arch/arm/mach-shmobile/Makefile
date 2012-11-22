@@ -56,3 +56,6 @@ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
 # Framework support
 obj-$(CONFIG_SMP)		+= $(smp-y)
 obj-$(CONFIG_GENERIC_GPIO)	+= $(pfc-y)
+
+# IPMMU/IPMMUI
+obj-$(CONFIG_SHMOBILE_IPMMU)	+= ipmmu.o
