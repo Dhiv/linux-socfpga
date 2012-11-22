@@ -105,6 +105,39 @@ static struct platform_device vpc_device = {
 	.num_resources	= ARRAY_SIZE(vpc_resources),
 };
 
+/* MERAM */
+static struct uio_info meram_uio_platform_data = {
+	.name = "MERAM",
+	.version = "0",
+	.irq = -1,
+};
+
+static struct resource meram_uio_resources[] = {
+	[0] = {
+		.name	= "MERAM",
+		.start	= 0xe8000000,
+		.end	= 0xe807ffff,
+		.flags	= IORESOURCE_MEM,
+	},
+	[1] = {
+		.name	= "MERAM_MEM",
+		.start	= 0xe8080000,
+		.end	= 0xe81fffff,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device meram_uio_device = {
+	.name		= "uio_pdrv_genirq",
+	.id		= 0,
+	.dev = {
+		.platform_data	= &meram_uio_platform_data,
+		.coherent_dma_mask = ~0,
+	},
+	.resource	= meram_uio_resources,
+	.num_resources	= ARRAY_SIZE(meram_uio_resources),
+};
+
 /* VCP1 */
 static unsigned int regions[] = {
 	(80 << 20),
@@ -424,6 +457,7 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
 	&vio_device,
 	&ipmmu_device,
 	&meram_device,
+	&meram_uio_device,
 
 };
 
