@@ -59,3 +59,4 @@ obj-$(CONFIG_GENERIC_GPIO)	+= $(pfc-y)
 
 # IPMMU/IPMMUI
 obj-$(CONFIG_SHMOBILE_IPMMU)	+= ipmmu.o
+obj-$(CONFIG_SHMOBILE_PMB)	+= ipmmu-pmb.o

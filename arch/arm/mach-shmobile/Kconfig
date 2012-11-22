@@ -181,6 +181,13 @@ config SHMOBILE_IPMMU
 config SHMOBILE_IPMMU_TLB
 	bool
 
+config SHMOBILE_PMB
+	bool "IPMMU PMB driver"
+	default n
+	select SHMOBILE_IPMMU
+	help
+	  This enables build of the IPMMU PMB driver.
+
 source "drivers/sh/Kconfig"
 
 endif
