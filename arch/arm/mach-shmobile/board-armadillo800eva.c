@@ -1212,6 +1212,7 @@ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
 	.init_early	= eva_add_early_devices,
 	.init_irq	= r8a7740_init_irq,
 	.handle_irq	= shmobile_handle_irq_intc,
+	.reserve	= r8a7740_reserve_memory,
 	.init_machine	= eva_init,
 	.init_late	= shmobile_init_late,
 	.timer		= &shmobile_timer,

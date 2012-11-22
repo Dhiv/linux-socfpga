@@ -23,10 +23,13 @@
 #include <linux/init.h>
 #include <linux/io.h>
 #include <linux/platform_device.h>
+#include <linux/platform_data/uio_dmem_genirq.h>
 #include <linux/of_platform.h>
 #include <linux/serial_sci.h>
 #include <linux/sh_dma.h>
 #include <linux/sh_timer.h>
+#include <linux/uio_driver.h>
+#include <linux/dma-contiguous.h>
 #include <linux/dma-mapping.h>
 #include <mach/dma-register.h>
 #include <mach/r8a7740.h>
@@ -73,6 +76,94 @@ void __init r8a7740_map_io(void)
 	 */
 	init_consistent_dma_size(12 << 20);
 }
+
+/* VPC */
+static struct uio_info vpc_platform_data = {
+	.name = "VPC",
+	.version = "0",
+	.irq = -1,
+};
+
+static struct resource vpc_resources[] = {
+	[0] = {
+		.name	= "VPC",
+		.start	= 0xfe9d0000,
+		.end	= 0xfe9d0020,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device vpc_device = {
+	.name		= "uio_pdrv_genirq",
+	.id		= 2,
+	.dev = {
+		.platform_data	= &vpc_platform_data,
+	},
+	.resource	= vpc_resources,
+	.num_resources	= ARRAY_SIZE(vpc_resources),
+};
+
+/* VCP1 */
+static unsigned int regions[] = {
+	(80 << 20),
+};
+
+static struct uio_dmem_genirq_pdata vpu_platform_data = {
+	.uioinfo = {
+		.name = "VPU5",
+		.version = "0",
+		.irq = intcs_evt2irq(0x880),
+	},
+	.dynamic_region_sizes	= regions,
+	.num_dynamic_regions	= ARRAY_SIZE(regions),
+};
+
+static struct resource vpu_resources[] = {
+	[0] = {
+		.name	= "VPU",
+		.start	= 0xfe900000,
+		.end	= 0xfe900157,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device vpu_device = {
+	.name		= "uio_dmem_genirq",
+	.id		= 0,
+	.dev = {
+		.platform_data	= &vpu_platform_data,
+		.coherent_dma_mask = ~0,
+	},
+	.resource	= vpu_resources,
+	.num_resources	= ARRAY_SIZE(vpu_resources),
+};
+
+/* VI00 */
+static struct uio_info vio_platform_data = {
+	.name = "VIO6C",
+	.version = "0",
+	.irq = intcs_evt2irq(0x4E0),
+};
+
+static struct resource vio_resources[] = {
+	[0] = {
+		.name	= "VIO6",
+		.start	= 0xfe920000,
+		.end	= 0xfe928000,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device vio_device = {
+	.name		= "uio_pdrv_genirq",
+	.id		= 1,
+	.dev = {
+		.platform_data	= &vio_platform_data,
+		.coherent_dma_mask = ~0,
+	},
+	.resource	= vio_resources,
+	.num_resources	= ARRAY_SIZE(vio_resources),
+};
 
 /* SCIFA0 */
 static struct plat_sci_port scif0_platform_data = {
@@ -279,6 +370,10 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
 	&scif7_device,
 	&scifb_device,
 	&cmt10_device,
+	&vpu_device,
+	&vpc_device,
+	&vio_device,
+
 };
 
 /* DMA */
@@ -716,6 +811,11 @@ void __init r8a7740_add_early_devices(void)
 
 	/* override timer setup with soc-specific code */
 	shmobile_timer.init = r8a7740_earlytimer_init;
+}
+
+void __init r8a7740_reserve_memory(void)
+{
+	dma_declare_contiguous(&vpu_device.dev, 80 << 20, 0, 0);
 }
 
 #ifdef CONFIG_USE_OF
