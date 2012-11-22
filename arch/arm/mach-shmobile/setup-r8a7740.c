@@ -35,6 +35,7 @@
 #include <mach/r8a7740.h>
 #include <mach/pm-rmobile.h>
 #include <mach/common.h>
+#include <mach/ipmmu.h>
 #include <mach/irqs.h>
 #include <asm/mach-types.h>
 #include <asm/mach/map.h>
@@ -359,6 +360,23 @@ static struct platform_device cmt10_device = {
 	.num_resources	= ARRAY_SIZE(cmt10_resources),
 };
 
+/* IPMMUI (an IPMMU module for ICB/LMB) */
+static struct resource ipmmu_resources[] = {
+	[0] = {
+		.name	= "IPMMUI",
+		.start	= 0xfe951000,
+		.end	= 0xfe9510ff,
+		.flags	= IORESOURCE_MEM,
+	},
+};
+
+static struct platform_device ipmmu_device = {
+	.name           = "ipmmu",
+	.id             = -1,
+	.resource       = ipmmu_resources,
+	.num_resources  = ARRAY_SIZE(ipmmu_resources),
+};
+
 static struct platform_device *r8a7740_early_devices[] __initdata = {
 	&scif0_device,
 	&scif1_device,
@@ -373,6 +391,7 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
 	&vpu_device,
 	&vpc_device,
 	&vio_device,
+	&ipmmu_device,
 
 };
 
@@ -778,6 +797,10 @@ void __init r8a7740_add_standard_devices(void)
 	/* add devices */
 	platform_add_devices(r8a7740_early_devices,
 			    ARRAY_SIZE(r8a7740_early_devices));
+
+	ipmmu_add_device(&vpu_device.dev);
+	ipmmu_add_device(&vio_device.dev);
+
 	platform_add_devices(r8a7740_late_devices,
 			     ARRAY_SIZE(r8a7740_late_devices));
 

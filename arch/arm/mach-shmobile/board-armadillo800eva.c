@@ -40,6 +40,7 @@
 #include <mach/common.h>
 #include <mach/irqs.h>
 #include <mach/r8a7740.h>
+#include <mach/ipmmu.h>
 #include <media/mt9t112.h>
 #include <media/sh_mobile_ceu.h>
 #include <media/soc_camera.h>
@@ -1176,6 +1177,8 @@ static void __init eva_init(void)
 	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
 
 	r8a7740_add_standard_devices();
+
+	ipmmu_add_device(&lcdc0_device.dev);
 
 	platform_add_devices(eva_devices,
 			     ARRAY_SIZE(eva_devices));
