@@ -681,11 +681,11 @@ static int axfs_do_fill_super(struct super_block *sb)
 		goto out;
 	}
 
+#ifdef CONFIG_AXFS_DEBUG
 	if (axfs_get_inode_num_entries(sbi, 0) == 0) {
 		printk(KERN_INFO "axfs: empty filesystem\n");
-		err = -EINVAL;
-		goto out;
 	}
+#endif
 
 	err = axfs_init_cblock_buffers(sbi);
 	if (err)

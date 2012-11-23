@@ -42,6 +42,13 @@ int axfs_uncompress_block(void *, int, void *, int);
 int axfs_uncompress_init(void);
 int axfs_uncompress_exit(void);
 
+#ifdef CONFIG_AXFS_DEBUG
+int axfs_xip_record(unsigned char *name, unsigned long physaddr,
+					unsigned long virtaddr,
+					unsigned int size,
+					unsigned long pgprot);
+#endif
+
 struct axfs_profiling_data {
 	u64 inode_number;
 	unsigned long count;

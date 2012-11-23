@@ -16,3 +16,21 @@ config AXFS_PROFILING
 	  Profiling tooling used to identify what pages in the filesystem
 	  image are actually accessed and how much.
 
+config AXFS_DEBUG
+	bool "AXFS debugging support"
+	depends on AXFS
+	help
+	  If you are experiencing any problems with the AXFS filesystem, say
+	  Y here.  This will create a profile entry at /proc/axfs_xip. In this
+	  profile, the XIP mapped pages of files are recorded.
+
+	  If unsure, say N.
+
+config AXFS_DEBUG_XIP_RECORDS_NUM
+	int "Number of axfs xip profile records (100 - 1000)"
+	range 100 1000
+	depends on AXFS_DEBUG
+	default 500
+	help
+	  The number of records which /porc/axfs_xip can record. one record
+	  takes about 64 bytes of memory.

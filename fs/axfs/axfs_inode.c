@@ -464,6 +464,10 @@ static int axfs_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	struct axfs_super *sbi = AXFS_SB(sb);
 	u64 ino_number = inode->i_ino;
 	u64 array_index;
+#ifdef CONFIG_AXFS_DEBUG
+	unsigned long xip_node_address, offset, length;
+	unsigned int numpages, count;
+#endif
 
 	array_index = axfs_get_inode_array_index(sbi, ino_number) + vmf->pgoff;
 
@@ -474,12 +478,39 @@ static int axfs_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
 	if (!(vma->vm_flags & VM_WRITE))
 		axfs_profiling_add(sbi, array_index, ino_number);
 
+#ifdef CONFIG_AXFS_DEBUG
+	offset = vma->vm_pgoff;
+	length = vma->vm_end - vma->vm_start;
+
+	if (length > inode->i_size)
+		length = inode->i_size;
+
+	length = PAGE_ALIGN(length);
+	numpages = length >> PAGE_SHIFT;
+#endif
+
 	/*
 	 * figure out if the node is XIP or compressed and call the
 	 * appropriate function
 	 */
-	if (axfs_is_node_xip(sbi, array_index))
-		return xip_file_fault(vma, vmf);
+#ifdef CONFIG_AXFS_DEBUG
+	for (count = 0; count < numpages; count++, array_index++) {
+#endif
+		if (axfs_is_node_xip(sbi, array_index)) {
+#ifdef CONFIG_AXFS_DEBUG
+			xip_node_address  = axfs_get_xip_region_physaddr(sbi);
+			xip_node_address += ((axfs_get_inode_num_entries(sbi, array_index)) << PAGE_SHIFT);
+			axfs_xip_record((unsigned char *)file->f_dentry->d_name.name,
+					xip_node_address,
+					vma->vm_start + (PAGE_SIZE * count),
+					(unsigned int)(PAGE_SIZE),
+					pgprot_val(vma->vm_page_prot));
+#endif
+			return xip_file_fault(vma, vmf);
+	   }
+#ifdef CONFIG_AXFS_DEBUG
+	}
+#endif
 	return filemap_fault(vma, vmf);
 }
 
