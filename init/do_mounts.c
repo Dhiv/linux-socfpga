@@ -439,6 +439,19 @@ static int __init mount_nfs_root(void)
 }
 #endif
 
+#ifdef CONFIG_AXFS_FIRST_MOUNT_AXFS_AS_ROOTFS
+static int __init mount_axfs_root(void)
+{
+	create_dev("/dev/root", ROOT_DEV);
+	if (root_mount_data &&
+	    do_mount_root("/dev/root", "axfs", root_mountflags,
+					root_mount_data) == 0)
+		return 1;
+	return 0;
+}
+#endif
+
+
 #if defined(CONFIG_BLK_DEV_RAM) || defined(CONFIG_BLK_DEV_FD)
 void __init change_floppy(char *fmt, ...)
 {
@@ -471,6 +484,13 @@ void __init change_floppy(char *fmt, ...)
 
 void __init mount_root(void)
 {
+#ifdef CONFIG_AXFS_FIRST_MOUNT_AXFS_AS_ROOTFS
+	if (MAJOR(ROOT_DEV) == UNNAMED_MAJOR) {
+		if (mount_axfs_root())
+			return;
+		printk(KERN_ERR "VFS: Unable to mount axfs root.\n");
+	}
+#endif
 #ifdef CONFIG_ROOT_NFS
 	if (ROOT_DEV == Root_NFS) {
 		if (mount_nfs_root())

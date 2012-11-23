@@ -34,3 +34,18 @@ config AXFS_DEBUG_XIP_RECORDS_NUM
 	help
 	  The number of records which /porc/axfs_xip can record. one record
 	  takes about 64 bytes of memory.
+
+config AXFS_FIRST_MOUNT_AXFS_AS_ROOTFS
+	bool "First Mount AXFS as Rootfs"
+	depends on AXFS
+	help
+	  Say Y if you have enabled axfs, and you want to mount the axfs
+	  image as a root file system first when the kernel boots. This option
+	  makes the kernel boottime a little faster when the command line is
+	  properly set. Before having the kernel mount this axfs image
+	  as a root file system, you must pass the command line parameter:
+	  "root=/dev/null rootflags=physaddr=0x********" to the kernel
+	  (replace 0x******** with the physical address location of the
+	  axfs image to boot with).
+
+	  If unsure, say N.

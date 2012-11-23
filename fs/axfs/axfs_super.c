@@ -884,6 +884,12 @@ struct dentry *axfs_get_sb(struct file_system_type *fs_type, int flags,
 	if (err)
 		goto out;
 
+#ifdef CONFIG_AXFS_FIRST_MOUNT_AXFS_AS_ROOTFS
+	printk(KERN_INFO "AXFS: Checking AXFS filesystem at virtaddr: 0x%08lx "
+			"(physaddr=0x%08lx).\n", sbi->virt_start_addr,
+			sbi->phys_start_addr);
+#endif
+
 	/* First we check if we are mounting directly to memory */
 	ret = axfs_get_sb_address(fs_type, flags, sbi);
 	if (!(IS_ERR_OR_NULL(ret)))
