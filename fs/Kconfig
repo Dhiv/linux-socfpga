@@ -17,7 +17,7 @@ source "fs/ext4/Kconfig"
 config FS_XIP
 # execute in place
 	bool
-	depends on EXT2_FS_XIP || PRAMFS_XIP
+	depends on EXT2_FS_XIP || PRAMFS_XIP || AXFS
 	default y
 
 source "fs/jbd/Kconfig"
@@ -221,6 +221,7 @@ source "fs/pstore/Kconfig"
 source "fs/sysv/Kconfig"
 source "fs/ufs/Kconfig"
 source "fs/pramfs/Kconfig"
+source "fs/axfs/Kconfig"
 source "fs/exofs/Kconfig"
 
 endif # MISC_FILESYSTEMS
