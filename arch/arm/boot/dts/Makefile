@@ -159,7 +159,6 @@ dtb-$(CONFIG_ARCH_VT8500) += vt8500-bv07.dtb \
 dtb-$(CONFIG_ARCH_ZYNQ) += zynq-zc702.dtb
 
 targets += dtbs
-targets += $(dtb-y)
 endif
 
 # *.dtb used to be generated in the directory above. Clean out the
