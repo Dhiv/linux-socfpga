@@ -127,5 +127,18 @@
 		serial1@ffc03000 {
 			clock-frequency = <100000000>;
 		};
+
+		i2c0: i2c@ffc04000 {
+			speed-mode = <0>;
+		};
+	};
+};
+
+&i2c0 {
+	lcd: lcd@28 {
+		compatible = "newhaven,nhd‐0216k3z‐nsw‐bbw";
+		reg = <0x28>;
+		height = <2>;
+		width = <16>;
 	};
 };
