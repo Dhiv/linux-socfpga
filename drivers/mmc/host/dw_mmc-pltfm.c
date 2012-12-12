@@ -107,22 +107,11 @@ static int dw_mci_pltfm_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(dw_mci_pltfm_pmops, dw_mci_pltfm_suspend, dw_mci_pltfm_resume);
 
-#ifdef CONFIG_OF
-static struct of_device_id dw_mci_of_match[] __devinitdata = {
-       { .compatible = "snps,dw-mmc", },
-       { /* end of table */}
-};
-MODULE_DEVICE_TABLE(of, dw_mci_of_match);
-#else
-#define dw_mci_of_match NULL
-#endif /* CONFIG_OF */
-
 static struct platform_driver dw_mci_pltfm_driver = {
 	.remove		= __exit_p(dw_mci_pltfm_remove),
 	.driver		= {
 		.name		= "dw_mmc",
 		.pm		= &dw_mci_pltfm_pmops,
-		.of_match_table = dw_mci_of_match,
 	},
 };
 

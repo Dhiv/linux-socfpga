@@ -273,6 +273,12 @@ static u32 dw_mci_prepare_command(struct mmc_host *mmc, struct mmc_command *cmd)
 			cmdr |= SDMMC_CMD_DAT_WR;
 	}
 
+	if (drv_data && drv_data->prepare_command)
+		drv_data->prepare_command(slot->host, &cmdr);
+
+	if (slot->host->use_hold_reg)
+		cmdr |= SDMMC_CMD_USE_HOLD_REG;
+
 	return cmdr;
 }
 
@@ -1935,6 +1941,80 @@ static bool mci_wait_reset(struct device *dev, struct dw_mci *host)
 	return false;
 }
 
+#ifdef CONFIG_OF
+static struct dw_mci_of_quirks {
+	char *quirk;
+	int id;
+} of_quirks[] = {
+	{
+		.quirk	= "supports-highspeed",
+		.id	= DW_MCI_QUIRK_HIGHSPEED,
+	}, {
+		.quirk	= "broken-cd",
+		.id	= DW_MCI_QUIRK_BROKEN_CARD_DETECTION,
+	},
+};
+
+static struct dw_mci_board *dw_mci_parse_dt(struct dw_mci *host)
+{
+	struct dw_mci_board *pdata;
+	struct device *dev = host->dev;
+	struct device_node *np = dev->of_node;
+	const struct dw_mci_drv_data *drv_data = host->drv_data;
+	int idx, ret;
+
+	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
+	if (!pdata) {
+		dev_err(dev, "could not allocate memory for pdata\n");
+		return ERR_PTR(-ENOMEM);
+	}
+
+	if (of_property_read_u32(dev->of_node, "bus-hz", &pdata->bus_hz)) {
+		dev_err(dev, "couldn't determine bus-hz\n");
+		pdata->bus_hz = 50000000;
+	}
+
+	/* find out number of slots supported */
+	if (of_property_read_u32(dev->of_node, "num-slots",
+				&pdata->num_slots)) {
+		dev_info(dev, "num-slots property not found, "
+				"assuming 1 slot is available\n");
+		pdata->num_slots = 1;
+	}
+
+	/* get quirks */
+	for (idx = 0; idx < ARRAY_SIZE(of_quirks); idx++)
+		if (of_get_property(np, of_quirks[idx].quirk, NULL))
+			pdata->quirks |= of_quirks[idx].id;
+
+	if (of_property_read_u32(np, "fifo-depth", &pdata->fifo_depth))
+		dev_info(dev, "fifo-depth property not found, using "
+				"value of FIFOTH register as default\n");
+
+	of_property_read_u32(np, "card-detect-delay", &pdata->detect_delay_ms);
+
+	if (drv_data && drv_data->parse_dt) {
+		ret = drv_data->parse_dt(host);
+		if (ret)
+			return ERR_PTR(ret);
+	}
+
+	if (of_find_property(np, "keep-power-in-suspend", NULL))
+		pdata->pm_caps |= MMC_PM_KEEP_POWER;
+
+	if (of_find_property(np, "enable-sdio-wakeup", NULL))
+		pdata->pm_caps |= MMC_PM_WAKE_SDIO_IRQ;
+
+	return pdata;
+}
+
+#else /* CONFIG_OF */
+static struct dw_mci_board *dw_mci_parse_dt(struct dw_mci *host)
+{
+	return ERR_PTR(-EINVAL);
+}
+#endif /* CONFIG_OF */
+
 int dw_mci_probe(struct dw_mci *host)
 {
 	int width, i, ret = 0;
@@ -1945,36 +2025,6 @@ int dw_mci_probe(struct dw_mci *host)
 			"Platform data must supply init function\n");
 		return -ENODEV;
 	}
-
-#ifdef CONFIG_OF
-	if (of_property_read_u32(host->dev.of_node, "bus-hz", &prop)) {
-		dev_err(&host->dev, "couldn't determine bus-hz\n");
-		return -ENODEV;
-	}
-	host->pdata->bus_hz = prop;
-
-	if (of_property_read_u32(host->dev.of_node, "num-slots", &prop)) {
-		dev_err(&host->dev, "couldn't determine num-slots\n");
-		return -ENODEV;
-	}
-	host->pdata->num_slots = prop;
-
-	/* Optional parameter. */
-	if (!of_property_read_u32(host->dev.of_node, "fifo-depth", &prop)) {
-		host->pdata->fifo_depth = prop;
-	}
-
-	if (of_property_read_u32(host->dev.of_node, "bus-width", &prop)) {
-		dev_err(&host->dev, "couldn't determine bus-width\n");
-		return -ENODEV;
-	}
-
-	if (prop == 8)
-		host->pdata->caps |= (MMC_CAP_4_BIT_DATA |
-					MMC_CAP_8_BIT_DATA);
-	else if (prop == 4)
-		host->pdata->caps |= MMC_CAP_4_BIT_DATA;
-#endif
 
 	if (!host->pdata->select_slot && host->pdata->num_slots > 1) {
 		dev_err(&host->dev,
@@ -2023,6 +2073,9 @@ int dw_mci_probe(struct dw_mci *host)
 		width = 32;
 		host->data_shift = 2;
 	}
+
+	/* Get the USE_HOLD_REG */
+	host->use_hold_reg = mci_readl(host, CMD) & SDMMC_CMD_USE_HOLD_REG;
 
 	/* Reset all blocks */
 	if (!mci_wait_reset(&host->dev, host)) {
