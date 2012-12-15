@@ -352,8 +352,49 @@ static long pram_fallocate(struct file *file, int mode, loff_t offset,
 	return ret;
 }
 
+loff_t pram_llseek(struct file *file, loff_t offset, int origin)
+{
+	struct inode *inode = file->f_path.dentry->d_inode;
+	int retval;
+
+	if (origin != SEEK_DATA && origin != SEEK_HOLE)
+		return generic_file_llseek(file, offset, origin);
+
+	mutex_lock(&inode->i_mutex);
+	switch (origin) {
+	case SEEK_DATA:
+		retval = pram_find_region(inode, &offset, 0);
+		if (retval) {
+			mutex_unlock(&inode->i_mutex);
+			return retval;
+		}
+		break;
+	case SEEK_HOLE:
+		retval = pram_find_region(inode, &offset, 1);
+		if (retval) {
+			mutex_unlock(&inode->i_mutex);
+			return retval;
+		}
+		break;
+	}
+
+	if ((offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) ||
+			offset > inode->i_sb->s_maxbytes) {
+		mutex_unlock(&inode->i_mutex);
+		return -EINVAL;
+	}
+
+	if (offset != file->f_pos) {
+		file->f_pos = offset;
+		file->f_version = 0;
+	}
+
+	mutex_unlock(&inode->i_mutex);
+	return offset;
+}
+
 const struct file_operations pram_file_operations = {
-	.llseek		= generic_file_llseek,
+	.llseek		= pram_llseek,
 	.read		= do_sync_read,
 	.write		= do_sync_write,
 	.aio_read	= generic_file_aio_read,
@@ -372,7 +413,7 @@ const struct file_operations pram_file_operations = {
 
 #ifdef CONFIG_PRAMFS_XIP
 const struct file_operations pram_xip_file_operations = {
-	.llseek		= generic_file_llseek,
+	.llseek		= pram_llseek,
 	.read		= pram_xip_file_read,
 	.write		= xip_file_write,
 	.mmap		= pram_xip_file_mmap,
@@ -394,5 +435,5 @@ const struct inode_operations pram_file_inode_operations = {
 	.removexattr	= generic_removexattr,
 #endif
 	.setattr	= pram_notify_change,
-	.check_acl	= pram_check_acl,
+	.get_acl	= pram_get_acl,
 };

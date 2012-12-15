@@ -35,7 +35,7 @@ long pram_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	case FS_IOC_SETFLAGS: {
 		unsigned int oldflags;
 
-		ret = mnt_want_write(filp->f_path.mnt);
+		ret = mnt_want_write_file(filp);
 		if (ret)
 			return ret;
 
@@ -73,25 +73,31 @@ long pram_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		pram_memlock_inode(inode->i_sb, pi);
 		mutex_unlock(&inode->i_mutex);
 flags_out:
-		mnt_drop_write(filp->f_path.mnt);
+		mnt_drop_write_file(filp);
 		return ret;
 	}
 	case FS_IOC_GETVERSION:
 		return put_user(inode->i_generation, (int __user *) arg);
-	case FS_IOC_SETVERSION:
+	case FS_IOC_SETVERSION: {
+		__u32 generation;
 		if (!inode_owner_or_capable(inode))
 			return -EPERM;
-		ret = mnt_want_write(filp->f_path.mnt);
+		ret = mnt_want_write_file(filp);
 		if (ret)
 			return ret;
-		if (get_user(inode->i_generation, (int __user *) arg)) {
+		if (get_user(generation, (int __user *) arg)) {
 			ret = -EFAULT;
-		} else {
-			inode->i_ctime = CURRENT_TIME_SEC;
-			pram_update_inode(inode);
+			goto setversion_out;
 		}
-		mnt_drop_write(filp->f_path.mnt);
+		mutex_lock(&inode->i_mutex);
+		inode->i_ctime = CURRENT_TIME_SEC;
+		inode->i_generation = generation;
+		pram_update_inode(inode);
+		mutex_unlock(&inode->i_mutex);
+setversion_out:
+		mnt_drop_write_file(filp);
 		return ret;
+	}
 	default:
 		return -ENOTTY;
 	}

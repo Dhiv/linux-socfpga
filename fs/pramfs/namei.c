@@ -24,14 +24,14 @@
 
 static inline void pram_inc_count(struct inode *inode)
 {
-	inode->i_nlink++;
+	inc_nlink(inode);
 	pram_write_inode(inode, NULL);
 }
 
 static inline void pram_dec_count(struct inode *inode)
 {
 	if (inode->i_nlink) {
-		inode->i_nlink--;
+		drop_nlink(inode);
 		pram_write_inode(inode, NULL);
 	}
 }
@@ -115,7 +115,7 @@ static struct dentry *pram_lookup(struct inode *dir, struct dentry *dentry,
  * If the create succeeds, we fill in the inode information
  * with d_instantiate().
  */
-static int pram_create(struct inode *dir, struct dentry *dentry, int mode,
+static int pram_create(struct inode *dir, struct dentry *dentry, umode_t mode,
 		       struct nameidata *nd)
 {
 	struct inode *inode = pram_new_inode(dir, mode, &dentry->d_name);
@@ -134,7 +134,7 @@ static int pram_create(struct inode *dir, struct dentry *dentry, int mode,
 	return err;
 }
 
-static int pram_mknod(struct inode *dir, struct dentry *dentry, int mode,
+static int pram_mknod(struct inode *dir, struct dentry *dentry, umode_t mode,
 		      dev_t rdev)
 {
 	struct inode *inode = pram_new_inode(dir, mode, &dentry->d_name);
@@ -200,14 +200,11 @@ static int pram_unlink(struct inode *dir, struct dentry *dentry)
 	return 0;
 }
 
-static int pram_mkdir(struct inode *dir, struct dentry *dentry, int mode)
+static int pram_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
 	struct inode *inode;
 	struct pram_inode *pi;
-	int err = -EMLINK;
-
-	if (dir->i_nlink >= PRAM_LINK_MAX)
-		goto out;
+	int err = 0;
 
 	pram_inc_count(dir);
 
@@ -262,7 +259,7 @@ static int pram_rmdir(struct inode *dir, struct dentry *dentry)
 	if (pi->i_type.dir.tail == 0) {
 		inode->i_ctime = dir->i_ctime;
 		inode->i_size = 0;
-		inode->i_nlink = 0;
+		clear_nlink(inode);
 		pram_write_inode(inode, NULL);
 		pram_dec_count(dir);
 		err = 0;
@@ -297,9 +294,6 @@ static int pram_rename(struct inode  *old_dir,
 		pram_dec_count(new_inode);
 	} else {
 		if (S_ISDIR(old_inode->i_mode)) {
-			err = -EMLINK;
-			if (new_dir->i_nlink >= PRAM_LINK_MAX)
-				goto out;
 			pram_dec_count(old_dir);
 			pram_inc_count(new_dir);
 		}
@@ -361,7 +355,7 @@ const struct inode_operations pram_dir_inode_operations = {
 	.removexattr	= generic_removexattr,
 #endif
 	.setattr	= pram_notify_change,
-	.check_acl	= pram_check_acl,
+	.get_acl	= pram_get_acl,
 };
 
 const struct inode_operations pram_special_inode_operations = {
@@ -372,5 +366,5 @@ const struct inode_operations pram_special_inode_operations = {
 	.removexattr	= generic_removexattr,
 #endif
 	.setattr	= pram_notify_change,
-	.check_acl	= pram_check_acl,
+	.get_acl	= pram_get_acl,
 };

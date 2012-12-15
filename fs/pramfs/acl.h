@@ -64,13 +64,12 @@ static inline int pram_acl_count(size_t size)
 #ifdef CONFIG_PRAMFS_POSIX_ACL
 
 /* acl.c */
-extern int pram_check_acl(struct inode *, int, unsigned int);
+extern struct posix_acl *pram_get_acl(struct inode *inode, int type);
 extern int pram_acl_chmod(struct inode *);
 extern int pram_init_acl(struct inode *, struct inode *);
 
 #else
 #include <linux/sched.h>
-#define pram_check_acl	NULL
 #define pram_get_acl	NULL
 #define pram_set_acl	NULL
 

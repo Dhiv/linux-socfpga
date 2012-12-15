@@ -52,9 +52,8 @@
 #define PRAM_EOFBLOCKS_FL	0x20000000
 /* Flags that should be inherited by new inodes from their parent. */
 #define PRAM_FL_INHERITED (FS_SECRM_FL | FS_UNRM_FL | FS_COMPR_FL |\
-			   FS_SYNC_FL | FS_IMMUTABLE_FL | FS_APPEND_FL |\
-			   FS_NODUMP_FL | FS_NOATIME_FL | FS_COMPRBLK_FL |\
-			   FS_NOCOMP_FL | FS_JOURNAL_DATA_FL |\
+			   FS_SYNC_FL | FS_NODUMP_FL | FS_NOATIME_FL | \
+			   FS_COMPRBLK_FL | FS_NOCOMP_FL | FS_JOURNAL_DATA_FL |\
 			   FS_NOTAIL_FL | FS_DIRSYNC_FL)
 /* Flags that are appropriate for regular files (all but dir-specific ones). */
 #define PRAM_REG_FLMASK (~(FS_DIRSYNC_FL | FS_TOPDIR_FL))
@@ -94,7 +93,7 @@ extern u64 pram_find_data_block(struct inode *inode,
 extern struct inode *pram_iget(struct super_block *sb, unsigned long ino);
 extern void pram_put_inode(struct inode *inode);
 extern void pram_evict_inode(struct inode *inode);
-extern struct inode *pram_new_inode(struct inode *dir, int mode,
+extern struct inode *pram_new_inode(struct inode *dir, umode_t mode,
 					const struct qstr *qstr);
 extern int pram_update_inode(struct inode *inode);
 extern int pram_write_inode(struct inode *inode, struct writeback_control *wbc);
@@ -102,6 +101,7 @@ extern void pram_dirty_inode(struct inode *inode, int flags);
 extern int pram_notify_change(struct dentry *dentry, struct iattr *attr);
 extern void pram_set_inode_flags(struct inode *inode, struct pram_inode *pi);
 extern void pram_get_inode_flags(struct inode *inode, struct pram_inode *pi);
+extern int pram_find_region(struct inode *inode, loff_t *offset, int hole);
 
 /* ioctl.c */
 extern long pram_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);

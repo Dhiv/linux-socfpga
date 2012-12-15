@@ -454,7 +454,9 @@ static struct pram_inode *pram_init(struct super_block *sb, unsigned long size)
 
 static inline void set_default_opts(struct pram_sb_info *sbi)
 {
+#ifdef CONFIG_PRAMFS_WRITE_PROTECT
 	set_opt(sbi->s_mount_opt, PROTECT);
+#endif
 	set_opt(sbi->s_mount_opt, ERRORS_CONT);
 }
 
@@ -633,6 +635,7 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_magic = be16_to_cpu(super->s_magic);
 	sb->s_op = &pram_sops;
 	sb->s_maxbytes = pram_max_size(sb->s_blocksize_bits);
+	sb->s_max_links = PRAM_LINK_MAX;
 	sb->s_time_gran = 1;
 	sb->s_export_op = &pram_export_ops;
 	sb->s_xattr = pram_xattr_handlers;
@@ -648,9 +651,8 @@ static int pram_fill_super(struct super_block *sb, void *data, int silent)
 		goto out;
 	}
 
-	sb->s_root = d_alloc_root(root_i);
+	sb->s_root = d_make_root(root_i);
 	if (!sb->s_root) {
-		iput(root_i);
 		printk(KERN_ERR "get pramfs root inode failed\n");
 		retval = -ENOMEM;
 		goto out;
@@ -685,9 +687,9 @@ int pram_statfs(struct dentry *d, struct kstatfs *buf)
 	return 0;
 }
 
-static int pram_show_options(struct seq_file *seq, struct vfsmount *vfs)
+static int pram_show_options(struct seq_file *seq, struct dentry *root)
 {
-	struct pram_sb_info *sbi = PRAM_SB(vfs->mnt_sb);
+	struct pram_sb_info *sbi = PRAM_SB(root->d_sb);
 
 	seq_printf(seq, ",physaddr=0x%016llx", (u64)sbi->phys_addr);
 	if (sbi->initsize)
@@ -704,13 +706,13 @@ static int pram_show_options(struct seq_file *seq, struct vfsmount *vfs)
 		seq_printf(seq, ",uid=%u", sbi->uid);
 	if (sbi->gid != 0)
 		seq_printf(seq, ",gid=%u", sbi->gid);
-	if (test_opt(vfs->mnt_sb, ERRORS_RO))
+	if (test_opt(root->d_sb, ERRORS_RO))
 		seq_puts(seq, ",errors=remount-ro");
-	if (test_opt(vfs->mnt_sb, ERRORS_PANIC))
+	if (test_opt(root->d_sb, ERRORS_PANIC))
 		seq_puts(seq, ",errors=panic");
 #ifdef CONFIG_PRAMFS_WRITE_PROTECT
 	/* memory protection enabled by default */
-	if (!test_opt(vfs->mnt_sb, PROTECT))
+	if (!test_opt(root->d_sb, PROTECT))
 		seq_puts(seq, ",noprotect");
 #else
 	/*
@@ -722,19 +724,19 @@ static int pram_show_options(struct seq_file *seq, struct vfsmount *vfs)
 
 #ifdef CONFIG_PRAMFS_XATTR
 	/* user xattr not enabled by default */
-	if (test_opt(vfs->mnt_sb, XATTR_USER))
+	if (test_opt(root->d_sb, XATTR_USER))
 		seq_puts(seq, ",user_xattr");
 #endif
 
 #ifdef CONFIG_PRAMFS_POSIX_ACL
 	/* acl not enabled by default */
-	if (test_opt(vfs->mnt_sb, POSIX_ACL))
+	if (test_opt(root->d_sb, POSIX_ACL))
 		seq_puts(seq, ",acl");
 #endif
 
 #ifdef CONFIG_PRAMFS_XIP
 	/* xip not enabled by default */
-	if (test_opt(vfs->mnt_sb, XIP))
+	if (test_opt(root->d_sb, XIP))
 		seq_puts(seq, ",xip");
 #endif
 
@@ -817,7 +819,6 @@ static struct inode *pram_alloc_inode(struct super_block *sb)
 static void pram_i_callback(struct rcu_head *head)
 {
 	struct inode *inode = container_of(head, struct inode, i_rcu);
-	INIT_LIST_HEAD(&inode->i_dentry);
 	kmem_cache_free(pram_inode_cachep, PRAM_I(inode));
 }
 

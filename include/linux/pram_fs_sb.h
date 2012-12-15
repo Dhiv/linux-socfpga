@@ -34,7 +34,7 @@ struct pram_sb_info {
 	unsigned long s_mount_opt;
 	uid_t uid;		    /* Mount uid for root directory */
 	gid_t gid;		    /* Mount gid for root directory */
-	mode_t mode;		    /* Mount mode for root directory */
+	umode_t mode;		    /* Mount mode for root directory */
 	atomic_t next_generation;
 #ifdef CONFIG_PRAMFS_XATTR
 	struct rb_root desc_tree;
