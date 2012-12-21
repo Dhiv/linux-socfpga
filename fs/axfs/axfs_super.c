@@ -754,6 +754,7 @@ axfs_get_sb_address(struct file_system_type *fs_type,
 {
 	int mtdnr;
 	char *sd = sbi->second_dev;
+	struct dentry *dp = NULL;
 
 	if (sbi->phys_start_addr == 0)
 		return false;
@@ -767,11 +768,12 @@ axfs_get_sb_address(struct file_system_type *fs_type,
 
 	if (axfs_is_dev_mtd(sd, &mtdnr))
 		return axfs_get_sb_mtd(fs_type, flags, sd, sbi);
-	else if (axfs_is_dev_bdev(sd))
-		return axfs_get_sb_bdev(fs_type, flags, sd, sbi);
-	else
-		return mount_nodev(fs_type, flags, sbi, axfs_fill_super);
 
+	dp = axfs_get_sb_bdev(fs_type, flags, sd, sbi);
+	if (!IS_ERR_OR_NULL(dp))
+		return dp;
+
+	return mount_nodev(fs_type, flags, sbi, axfs_fill_super);
 }
 
 /* helpers for parse_axfs_options */

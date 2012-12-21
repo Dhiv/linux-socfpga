@@ -94,24 +94,6 @@ void axfs_copy_block(struct super_block *sb, void *dst_addr, u64 fsoffset,
 	}
 }
 
-int axfs_is_dev_bdev(char *path)
-{
-	struct nameidata nd;
-	int ret = false;
-
-	if (!path)
-		return false;
-	nd.flags |= LOOKUP_FOLLOW;
-	if (kern_path_parent(path, &nd))
-		return false;
-
-	if (S_ISBLK(nd.path.dentry->d_inode->i_mode))
-		ret = true;
-
-	path_put(&nd.path);
-	return ret;
-}
-
 int axfs_verify_bdev_sizes(struct super_block *sb, int *err)
 {
 	u64 io_dev_size;
