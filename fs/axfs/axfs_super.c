@@ -975,8 +975,10 @@ static int __init init_axfs_fs(void)
 
 	err = register_filesystem(&axfs_fs_type);
 
-	if (!err)
+	if (!err) {
+		axfs_xip_proc_profile();
 		return 0;
+	}
 
 	axfs_uncompress_exit();
 	return err;

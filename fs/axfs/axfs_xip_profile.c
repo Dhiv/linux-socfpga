@@ -137,7 +137,7 @@ static int axfs_xip_proc_write(struct file *file, const char *buffer,
 	return count;
 }
 
-static int __init axfs_xip_proc_profile(void)
+int __init axfs_xip_proc_profile(void)
 {
 	struct proc_dir_entry *ent;
 	ent = create_proc_entry("axfs_xip", S_IFREG|S_IRUGO|S_IWUSR, NULL);
@@ -149,6 +149,9 @@ static int __init axfs_xip_proc_profile(void)
 	ent->write_proc = axfs_xip_proc_write;
 	return 0;
 }
-late_initcall(axfs_xip_proc_profile);
-
+#else
+int __init axfs_xip_proc_profile(void)
+{
+	return 0;
+}
 #endif /* CONFIG_AXFS_DEBUG */

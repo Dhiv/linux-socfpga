@@ -93,4 +93,6 @@ void axfs_map_physmem(struct axfs_super *, unsigned long);
 void axfs_unmap_physmem(struct super_block *);
 #endif
 
+/* axfs_xip_profile.c */
+extern int __init axfs_xip_proc_profile(void);
 #endif
