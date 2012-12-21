@@ -172,7 +172,7 @@ static inline u64 axfs_get_xip_region_physaddr(struct axfs_super *sbi)
 static inline int axfs_region_is_vmalloc(struct axfs_super *sbi,
 					 struct axfs_region_desc *region)
 {
-	u64 va = (u32) region->virt_addr;
+	u64 va = (unsigned long) region->virt_addr;
 	u64 vo = (u64) region->fsoffset + (u64) sbi->virt_start_addr;
 
 	if (va == 0)
