@@ -21,6 +21,7 @@
 #define __MACH_CORE_H
 
 #define SOCFPGA_MODPERRST	0x14
+#define SOCFPGA_BRGMODRST	0x1c
 
 extern void secondary_startup(void);
 extern void __iomem *socfpga_scu_base_addr;
