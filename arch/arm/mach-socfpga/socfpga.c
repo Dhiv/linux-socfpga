@@ -32,7 +32,7 @@
 void __iomem *socfpga_scu_base_addr = ((void __iomem *)(SOCFPGA_SCU_VIRT_BASE));
 void __iomem *sys_manager_base_addr;
 void __iomem *rst_manager_base_addr;
-unsigned long	cpu1start_addr;
+unsigned long cpu1start_addr;
 
 static const struct of_dev_auxdata socfpga_auxdata_lookup[] __initconst = {
 	{ /* sentinel */ }
@@ -63,12 +63,12 @@ static void __init socfpga_scu_map_io(void)
 
 static void __init init_socfpga_vt(void)
 {
-	cpu1start_addr = 0x10;
+	cpu1start_addr = 0xffd08010;
 }
 
 static void __init init_socfpga(void)
 {
-	cpu1start_addr = 0xc4;
+	cpu1start_addr = 0xffd080c4;
 }
 
 static void __init enable_periphs(void)

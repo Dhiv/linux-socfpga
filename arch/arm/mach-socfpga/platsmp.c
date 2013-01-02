@@ -43,8 +43,8 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 
 	memcpy(phys_to_virt(0), &secondary_trampoline, trampoline_size);
 
-	__raw_writel(virt_to_phys(secondary_startup),
-					(sys_manager_base_addr+cpu1start_addr));
+	__raw_writel(virt_to_phys(v7_secondary_startup),
+		(sys_manager_base_addr+(cpu1start_addr & 0x000000ff)));
 
 	flush_cache_all();
 	smp_wmb();
