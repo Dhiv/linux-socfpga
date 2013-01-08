@@ -30,7 +30,7 @@
 
 #include "core.h"
 
-void __cpuinit platform_secondary_init(unsigned int cpu)
+static void __cpuinit socfpga_secondary_init(unsigned int cpu)
 {
 	/*
 	 * if any interrupts are already enabled for the primary
@@ -46,8 +46,8 @@ static int __cpuinit socfpga_boot_secondary(unsigned int cpu, struct task_struct
 
 	memcpy(phys_to_virt(0), &secondary_trampoline, trampoline_size);
 
-	__raw_writel(virt_to_phys(secondary_startup),
-					(sys_manager_base_addr+cpu1start_addr));
+	__raw_writel(virt_to_phys(v7_secondary_startup),
+		(sys_manager_base_addr+(cpu1start_addr & 0x000000ff)));
 
 	flush_cache_all();
 	smp_wmb();
@@ -74,8 +74,8 @@ static void __init socfpga_smp_init_cpus(void)
 
 	/* sanity check */
 	if (ncores > num_possible_cpus()) {
-		pr_warn("# of cores (%d) greater maximum of %d\n",
-			ncores, num_possible_cpus());
+		pr_warn("socfpga: no. of cores (%d) greater than configured"
+			"maximum of %d - clipping\n", ncores, num_possible_cpus());
 		ncores = num_possible_cpus();
 	}
 
