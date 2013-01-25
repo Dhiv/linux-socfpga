@@ -26,13 +26,14 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	memory {
-		name = "memory";
-		device_type = "memory";
-		reg = <0x0 0x40000000>; /* 1 GB */
-	};
-
 	soc {
+		stmmac@ff700000 {
+			phy-mode = "gmii";
+		};
+		stmmac@ff702000 {
+			phy-mode = "gmii";
+		};
+
 		qspi: spi@ff705000 {
 				compatible = "cadence,qspi";
 				#address-cells = <1>;
