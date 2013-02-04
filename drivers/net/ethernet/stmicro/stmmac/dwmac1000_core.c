@@ -40,6 +40,11 @@ static void dwmac1000_core_init(void __iomem *ioaddr)
 	/* Mask GMAC interrupts */
 	writel(0x207, ioaddr + GMAC_INT_MASK);
 
+	/* mask out interrupts because we don't handle them yet */
+	writel(~0UL, ioaddr + GMAC_MMC_INTR_MASK_RX);
+	writel(~0UL, ioaddr + GMAC_MMC_INTR_MASK_TX);
+	writel(~0UL, ioaddr + GMAC_MMC_IPC_INTR_MASK_RX);
+
 #ifdef STMMAC_VLAN_TAG_USED
 	/* Tag detection without filtering */
 	writel(0x0, ioaddr + GMAC_VLAN_TAG);
@@ -190,6 +195,8 @@ static void dwmac1000_pmt(void __iomem *ioaddr, unsigned long mode)
 static void dwmac1000_irq_status(void __iomem *ioaddr)
 {
 	u32 intr_status = readl(ioaddr + GMAC_INT_STATUS);
+	int status = 0;
+	u32 value;
 
 	/* Not used events (e.g. MMC interrupts) are not handled. */
 	if ((intr_status & mmc_tx_irq))
@@ -207,6 +214,84 @@ static void dwmac1000_irq_status(void __iomem *ioaddr)
 		 * status register. */
 		readl(ioaddr + GMAC_PMT);
 	}
+	if (unlikely(intr_status & rgmii_irq)) {
+		CHIP_DBG(KERN_INFO "GMAC: Interrupt Status\n");
+		/* clear this link change interrupt because we are not handling it yet. */
+		value = readl(ioaddr + GMAC_GMII_STATUS);
+	}
+	/* MAC trx/rx EEE LPI entry/exit interrupts */
+	if (intr_status & lpiis_irq) {
+		/* Clean LPI interrupt by reading the Reg 12 */
+		u32 lpi_status = readl(ioaddr + LPI_CTRL_STATUS);
+
+		if (lpi_status & LPI_CTRL_STATUS_TLPIEN) {
+			CHIP_DBG(KERN_INFO "GMAC TX entered in LPI\n");
+			status |= core_irq_tx_path_in_lpi_mode;
+		}
+		if (lpi_status & LPI_CTRL_STATUS_TLPIEX) {
+			CHIP_DBG(KERN_INFO "GMAC TX exit from LPI\n");
+			status |= core_irq_tx_path_exit_lpi_mode;
+		}
+		if (lpi_status & LPI_CTRL_STATUS_RLPIEN) {
+			CHIP_DBG(KERN_INFO "GMAC RX entered in LPI\n");
+			status |= core_irq_rx_path_in_lpi_mode;
+		}
+		if (lpi_status & LPI_CTRL_STATUS_RLPIEX) {
+			CHIP_DBG(KERN_INFO "GMAC RX exit from LPI\n");
+			status |= core_irq_rx_path_exit_lpi_mode;
+		}
+	}
+
+	return status;
+}
+
+static void  dwmac1000_set_eee_mode(void __iomem *ioaddr)
+{
+	u32 value;
+
+	/* Enable the link status receive on RGMII, SGMII ore SMII
+	 * receive path and instruct the transmit to enter in LPI
+	 * state. */
+	value = readl(ioaddr + LPI_CTRL_STATUS);
+	value |= LPI_CTRL_STATUS_LPIEN | LPI_CTRL_STATUS_LPITXA;
+	writel(value, ioaddr + LPI_CTRL_STATUS);
+}
+
+static void  dwmac1000_reset_eee_mode(void __iomem *ioaddr)
+{
+	u32 value;
+
+	value = readl(ioaddr + LPI_CTRL_STATUS);
+	value &= ~(LPI_CTRL_STATUS_LPIEN | LPI_CTRL_STATUS_LPITXA);
+	writel(value, ioaddr + LPI_CTRL_STATUS);
+}
+
+static void  dwmac1000_set_eee_pls(void __iomem *ioaddr, int link)
+{
+	u32 value;
+
+	value = readl(ioaddr + LPI_CTRL_STATUS);
+
+	if (link)
+		value |= LPI_CTRL_STATUS_PLS;
+	else
+		value &= ~LPI_CTRL_STATUS_PLS;
+
+	writel(value, ioaddr + LPI_CTRL_STATUS);
+}
+
+static void  dwmac1000_set_eee_timer(void __iomem *ioaddr, int ls, int tw)
+{
+	int value = ((tw & 0xffff)) | ((ls & 0x7ff) << 16);
+
+	/* Program the timers in the LPI timer control register:
+	 * LS: minimum time (ms) for which the link
+	 *  status from PHY should be ok before transmitting
+	 *  the LPI pattern.
+	 * TW: minimum time (us) for which the core waits
+	 *  after it has stopped transmitting the LPI pattern.
+	 */
+	writel(value, ioaddr + LPI_TIMER_CTRL);
 }
 
 static const struct stmmac_ops dwmac1000_ops = {
