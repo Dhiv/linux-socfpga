@@ -31,10 +31,10 @@
 			pwr-en = <1>;
 		};
 
-		stmmac@ff700000 {
+		ethernet@ff700000 {
 			phy-mode = "gmii";
 		};
-		stmmac@ff702000 {
+		ethernet@ff702000 {
 			phy-mode = "gmii";
 		};
 
