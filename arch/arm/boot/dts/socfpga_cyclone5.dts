@@ -34,11 +34,11 @@
 	};
 
 	soc {
-		stmmac@ff700000 {
+		ethernet@ff700000 {
 			status = "disabled";
 		};
 
-		stmmac@ff702000 {
+		ethernet@ff702000 {
 			phy-mode = "rgmii";
 			phy-addr = <0xffffffff>; /* probe for phy addr */
 		};
