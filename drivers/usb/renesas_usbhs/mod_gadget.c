@@ -597,12 +597,7 @@ static int usbhsg_ep_disable(struct usb_ep *ep)
 {
 	struct usbhsg_uep *uep = usbhsg_ep_to_uep(ep);
 
-	usbhsg_pipe_disable(uep);
-
-	uep->pipe->mod_private	= NULL;
-	uep->pipe		= NULL;
-
-	return 0;
+	return usbhsg_pipe_disable(uep);
 }
 
 static struct usb_request *usbhsg_ep_alloc_request(struct usb_ep *ep,
@@ -754,7 +749,7 @@ static int usbhsg_try_start(struct usbhs_priv *priv, u32 status)
 			usbhsg_dma_map_ctrl);
 	usbhs_fifo_init(priv);
 
-	/* dcp init instead of usbhsg_ep_enable() */
+	/* dcp init */
 	dcp->pipe		= usbhs_dcp_malloc(priv);
 	dcp->pipe->mod_private	= dcp;
 	usbhs_pipe_config_update(dcp->pipe, 0, 0, 64);
@@ -816,7 +811,7 @@ static int usbhsg_try_stop(struct usbhs_priv *priv, u32 status)
 	usbhs_sys_set_test_mode(priv, 0);
 	usbhs_sys_function_ctrl(priv, 0);
 
-	usbhsg_ep_disable(&dcp->ep);
+	usbhsg_pipe_disable(dcp);
 
 	dev_dbg(dev, "stop gadget\n");
 
