@@ -27,6 +27,10 @@
 	};
 
 	soc {
+		dwmmc0@ff704000 {
+			pwr-en = <1>;
+		};
+
 		stmmac@ff700000 {
 			phy-mode = "gmii";
 		};
