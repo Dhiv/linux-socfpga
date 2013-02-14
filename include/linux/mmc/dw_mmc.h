@@ -181,6 +181,8 @@ struct dw_mci {
 
 	/* Set to one for SDR12 and SDR25 */
 	unsigned int use_hold_reg;
+	/*Card needs power enable bit */
+	u32 pwr_en;
 };
 
 /* DMA ops for Internal/External DMAC interface */
@@ -221,6 +223,8 @@ struct dw_mci_board {
 
 	u32 quirks; /* Workaround / Quirk flags */
 	unsigned int bus_hz; /* Bus speed */
+	/*Card needs power enable bit */
+	u32 pwr_en;
 
 	unsigned int caps;	/* Capabilities */
 	unsigned int caps2;	/* More capabilities */
