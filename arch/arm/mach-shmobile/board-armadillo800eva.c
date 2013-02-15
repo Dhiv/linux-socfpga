@@ -795,6 +795,7 @@ static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
 static struct sh_fsi_platform_info fsi_info = {
 	/* FSI-WM8978 */
 	.port_a = {
+		.flags = SH_FSI_BRS_INV,
 		.tx_id = SHDMA_SLAVE_FSIA_TX,
 	},
 	/* FSI-HDMI */
