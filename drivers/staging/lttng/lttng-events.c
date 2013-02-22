@@ -51,7 +51,7 @@ int _lttng_session_metadata_statedump(struct lttng_session *session);
 void synchronize_trace(void)
 {
 	synchronize_sched();
-#ifdef CONFIG_PREEMPT_RT
+#ifdef CONFIG_PREEMPT_RT_FULL
 	synchronize_rcu();
 #endif
 }
