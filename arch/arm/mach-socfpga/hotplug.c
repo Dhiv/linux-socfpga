@@ -11,8 +11,10 @@
  */
 
 #include <linux/errno.h>
+#include <linux/io.h>
 #include <asm/cacheflush.h>
 #include <asm/cp15.h>
+#include "core.h"
 
 static inline void cpu_enter_lowpower(void)
 {
@@ -32,14 +34,17 @@ int platform_cpu_kill(unsigned int cpu)
  *
  * Called with IRQs disabled
  */
-void __ref platform_cpu_die(unsigned int cpu)
+void platform_cpu_die(unsigned int cpu)
 {
-	cpu_enter_lowpower();
+	/* Flush the L1 data cache. */
+	flush_cache_all();
+
+	/* This will put CPU #1 into reset.*/
+	__raw_writel(RSTMGR_MPUMODRST_CPU1, rst_manager_base_addr + 0x10);
 
 	cpu_do_idle();
-	cpu_leave_lowpower();
 
-	/* We should never return from idle */
+        /* We should have never returned from idle */
 	panic("cpu %d unexpectedly exit from shutdown\n", cpu);
 }
 

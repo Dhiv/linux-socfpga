@@ -86,3 +86,4 @@ void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 {
 	scu_enable(socfpga_scu_base_addr);
 }
+
