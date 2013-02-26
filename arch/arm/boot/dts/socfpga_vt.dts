@@ -20,7 +20,7 @@
 
 / {
 	model = "Altera SOCFPGA VT";
-	compatible = "altr,socfpga-vt";
+	compatible = "altr,socfpga-vt", "altr,socfpga";
 
 	chosen {
 		bootargs = "console=ttyS0,57600";
@@ -98,6 +98,10 @@
 					};
 				};
 			};
+
+		sysmgr@ffd08000 {
+			cpu1-start-addr = <0xffd08010>;
+		};
 
 		timer0@ffc08000 {
 			clock-frequency = <7000000>;
