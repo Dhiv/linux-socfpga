@@ -100,6 +100,7 @@ static inline unsigned long intc_irqpin_read(struct intc_irqpin_priv *p,
 					     int reg)
 {
 	struct intc_irqpin_iomem *i = &p->iomem[reg];
+
 	return i->read(i->iomem);
 }
 
@@ -107,6 +108,7 @@ static inline void intc_irqpin_write(struct intc_irqpin_priv *p,
 				     int reg, unsigned long data)
 {
 	struct intc_irqpin_iomem *i = &p->iomem[reg];
+
 	i->write(i->iomem, data);
 }
 
