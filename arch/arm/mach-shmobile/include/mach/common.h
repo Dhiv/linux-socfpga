@@ -66,6 +66,8 @@ extern void r8a7740_reserve_memory(void);
 extern void r8a7740_pinmux_init(void);
 
 extern void r8a7779_init_irq(void);
+extern void r8a7779_init_irq_extpin(int irlm);
+extern void r8a7779_init_irq_dt(void);
 extern void r8a7779_map_io(void);
 extern void r8a7779_add_early_devices(void);
 extern void r8a7779_add_standard_devices(void);

@@ -53,7 +53,7 @@ static struct resource smsc911x_resources[] = {
 		.flags		= IORESOURCE_MEM,
 	},
 	[1] = {
-		.start		= gic_spi(28), /* IRQ 1 */
+		.start		= irq_pin(1), /* IRQ1 */
 		.flags		= IORESOURCE_IRQ,
 	},
 };
@@ -84,6 +84,7 @@ static void __init marzen_init(void)
 	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
 
 	r8a7779_pinmux_init();
+	r8a7779_init_irq_extpin(1); /* IRQ1 as individual interrupt */
 
 	/* SCIF2 (CN18: DEBUG0) */
 	gpio_request(GPIO_FN_TX2_C, NULL);
