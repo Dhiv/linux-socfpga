@@ -20,7 +20,7 @@
 
 / {
 	model = "Altera SOCFPGA Cyclone V";
-	compatible = "altr,socfpga-cyclone5";
+	compatible = "altr,socfpga-cyclone5", "altr,socfpga";
 
 	chosen {
 		bootargs = "console=ttyS0,57600";
@@ -103,6 +103,10 @@
 					};
 				};
 			};
+
+		sysmgr@ffd08000 {
+			cpu1-start-addr = <0xffd080c4>;
+		};
 
 		timer0@ffc08000 {
 			clock-frequency = <100000000>;
