@@ -33,6 +33,14 @@
         };
 
 	soc {
+		clkmgr@ffd04000 {
+			clocks {
+				osc1 {
+					clock-frequency = <10000000>;
+				};
+			};
+		};
+
 		dwmmc0@ff704000 {
 			pwr-en = <1>;
 		};

@@ -40,6 +40,14 @@
 	};
 
 	soc {
+		clkmgr@ffd04000 {
+			clocks {
+				osc1 {
+					clock-frequency = <25000000>;
+				};
+			};
+		};
+
 		ethernet@ff700000 {
 			status = "disabled";
 		};
