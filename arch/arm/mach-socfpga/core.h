@@ -38,7 +38,6 @@ extern struct dw_mci_board sdmmc_platform_data;
 extern unsigned long cpu1start_addr;
 extern void v7_secondary_startup(void);
 
-#define SOCFPGA_SCU_VIRT_BASE	0xfffec000
-#define SOCFPGA_SDMMC_BASE	0xff704000
+#define SOCFPGA_SCU_VIRT_BASE   0xfee00000
 
 #endif /* __CORE_H */
