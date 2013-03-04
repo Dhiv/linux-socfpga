@@ -109,6 +109,7 @@ struct dmatest_chan {
  * @timeout:		transfer timeout in msec, -1 for infinite timeout
  */
 struct dmatest_info {
+	/* Test parameters */
 	unsigned int	buf_size;
 	char		channel[20];
 	char		device[20];
@@ -118,16 +119,13 @@ struct dmatest_info {
 	unsigned int	xor_sources;
 	unsigned int	pq_sources;
 	int		timeout;
+
+	/* Internal state */
+	struct list_head	channels;
+	unsigned int		nr_channels;
 };
 
 static struct dmatest_info test_info;
-
-/*
- * These are protected by dma_list_mutex since they're only used by
- * the DMA filter function callback
- */
-static LIST_HEAD(dmatest_channels);
-static unsigned int nr_channels;
 
 static bool dmatest_match_channel(struct dmatest_info *info,
 		struct dma_chan *chan)
@@ -658,8 +656,8 @@ static int dmatest_add_channel(struct dmatest_info *info,
 	pr_info("dmatest: Started %u threads using %s\n",
 		thread_count, dma_chan_name(chan));
 
-	list_add_tail(&dtc->node, &dmatest_channels);
-	nr_channels++;
+	list_add_tail(&dtc->node, &info->channels);
+	info->nr_channels++;
 
 	return 0;
 }
@@ -693,7 +691,8 @@ static int run_threaded_test(struct dmatest_info *info)
 			}
 		} else
 			break; /* no more channels available */
-		if (info->max_channels && nr_channels >= info->max_channels)
+		if (info->max_channels &&
+		    info->nr_channels >= info->max_channels)
 			break; /* we have all we need */
 	}
 	return err;
@@ -704,14 +703,15 @@ static void stop_threaded_test(struct dmatest_info *info)
 	struct dmatest_chan *dtc, *_dtc;
 	struct dma_chan *chan;
 
-	list_for_each_entry_safe(dtc, _dtc, &dmatest_channels, node) {
+	list_for_each_entry_safe(dtc, _dtc, &info->channels, node) {
 		list_del(&dtc->node);
 		chan = dtc->chan;
 		dmatest_cleanup_channel(dtc);
-		pr_debug("dmatest: dropped channel %s\n",
-			 dma_chan_name(chan));
+		pr_debug("dmatest: dropped channel %s\n", dma_chan_name(chan));
 		dma_release_channel(chan);
 	}
+
+	info->nr_channels = 0;
 }
 
 static int __init dmatest_init(void)
@@ -720,6 +720,9 @@ static int __init dmatest_init(void)
 
 	memset(info, 0, sizeof(*info));
 
+	INIT_LIST_HEAD(&info->channels);
+
+	/* Set default parameters */
 	info->buf_size = test_buf_size;
 	strlcpy(info->channel, test_channel, sizeof(info->channel));
 	strlcpy(info->device, test_device, sizeof(info->device));
