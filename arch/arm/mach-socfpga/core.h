@@ -1,6 +1,12 @@
 #ifndef __CORE_H
 #define __CORE_H
 
+#define SOCFPGA_SYSID_DEFAULT		0x1
+#define SOCFPGA_REVISION_DEFAULT	0x1
+
+/* Sysid register map */
+#define SYSID_ID_REG			0x0
+
 #define SOCFPGA_RSTMGR_CTRL	0x04
 #define SOCFPGA_RSTMGR_MODPERRST	0x14
 #define SOCFPGA_RSTMGR_BRGMODRST	0x1c
