@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <linux/dw_apb_timer.h>
-#include <linux/of_address.h>
 #include <linux/of_irq.h>
 #include <linux/of_address.h>
 #include <linux/of_platform.h>
@@ -278,24 +277,8 @@ static void __init socfpga_sysmgr_init(void)
 static void __init socfpga_map_io(void)
 {
 	socfpga_scu_map_io();
-	iotable_init(&uart_io_desc, 1);
+	debug_ll_io_init();
 	early_printk("Early printk initialized\n");
-}
-
-const static struct of_device_id irq_match[] = {
-	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
-	{}
-};
-
-void __init socfpga_sysmgr_init(void)
-{
-	struct device_node *np;
-
-	np = of_find_compatible_node(NULL, NULL, "altr,sys-mgr");
-	sys_manager_base_addr = of_iomap(np, 0);
-
-	np = of_find_compatible_node(NULL, NULL, "altr,rst-mgr");
-	rst_manager_base_addr = of_iomap(np, 0);
 }
 
 static void __init gic_init_irq(void)
