@@ -316,6 +316,11 @@ static irqreturn_t armpmu_dispatch_irq(int irq, void *dev)
 static void
 armpmu_release_hardware(struct arm_pmu *armpmu)
 {
+	struct platform_device *plat_device = armpmu->plat_device;
+	struct arm_pmu_platdata *plat = dev_get_platdata(&plat_device->dev);
+
+	if (plat->stop)
+		plat->stop(plat_device);
 	armpmu->free_irq();
 	pm_runtime_put_sync(&armpmu->plat_device->dev);
 }
@@ -325,6 +330,7 @@ armpmu_reserve_hardware(struct arm_pmu *armpmu)
 {
 	int err;
 	struct platform_device *pmu_device = armpmu->plat_device;
+	struct arm_pmu_platdata *plat = dev_get_platdata(&pmu_device->dev);
 
 	if (!pmu_device)
 		return -ENODEV;
@@ -335,6 +341,8 @@ armpmu_reserve_hardware(struct arm_pmu *armpmu)
 		armpmu_release_hardware(armpmu);
 		return err;
 	}
+	if (plat->start)
+		plat->start(pmu_device);
 
 	return 0;
 }
@@ -519,10 +527,18 @@ static void __init armpmu_init(struct arm_pmu *armpmu)
 
 int armpmu_register(struct arm_pmu *armpmu, char *name, int type)
 {
+	struct platform_device *plat_device = armpmu->plat_device;
+	struct arm_pmu_platdata *plat = dev_get_platdata(&plat_device->dev);
+
 	armpmu_init(armpmu);
 	pr_info("enabled with %s PMU driver, %d counters available\n",
 			armpmu->name, armpmu->num_events);
-	return perf_pmu_register(&armpmu->pmu, name, type);
+
+	/* Platform specific initialization. ie. CTI enable */
+	if (plat->init)
+		plat->init(plat_device);
+
+	return perf_pmu_register(&armpmu->pmu, armpmu->name, type);
 }
 
 /*

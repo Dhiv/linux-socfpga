@@ -29,8 +29,10 @@
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
 #include <asm/smp_twd.h>
+#include <asm/pmu.h>
 
 #include "core.h"
+#include "socfpga_cti.h"
 
 #define SOCFPGA_NR_IRQS		512
 
@@ -56,9 +58,21 @@ static struct plat_stmmacenet_data stmmacenet1_data = {
 	.init = &stmmac_plat_init,
 };
 
+#ifdef CONFIG_HW_PERF_EVENTS
+static struct arm_pmu_platdata socfpga_pmu_platdata = {
+	.handle_irq = socfpga_pmu_handler,
+	.init = socfpga_init_cti,
+	.start = socfpga_start_cti,
+	.stop = socfpga_stop_cti,
+};
+#endif
+
 static const struct of_dev_auxdata socfpga_auxdata_lookup[] __initconst = {
 	OF_DEV_AUXDATA("snps,dwmac-3.70a", 0xff700000, NULL, &stmmacenet0_data),
 	OF_DEV_AUXDATA("snps,dwmac-3.70a", 0xff702000, NULL, &stmmacenet1_data),
+#ifdef CONFIG_HW_PERF_EVENTS
+	OF_DEV_AUXDATA("arm,cortex-a9-pmu", 0, "arm-pmu", &socfpga_pmu_platdata),
+#endif
 	{ /* sentinel */ }
 };
 
