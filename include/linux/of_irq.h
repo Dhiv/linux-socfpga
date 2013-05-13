@@ -76,5 +76,16 @@ extern struct device_node *of_irq_find_parent(struct device_node *child);
 extern void of_irq_init(const struct of_device_id *matches);
 
 #endif /* CONFIG_OF_IRQ */
+#else /* !CONFIG_OF */
+static inline unsigned int irq_of_parse_and_map(struct device_node *dev,
+                                               int index)
+{
+       return 0;
+}
+
+static inline void *of_irq_find_parent(struct device_node *child)
+{
+       return NULL;
+}
+#endif /* !CONFIG_OF */
 #endif /* CONFIG_OF */
-#endif /* __OF_IRQ_H */

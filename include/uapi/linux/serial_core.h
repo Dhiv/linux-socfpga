@@ -47,14 +47,10 @@
 #define PORT_U6_16550A	19	/* ST-Ericsson U6xxx internal UART */
 #define PORT_TEGRA	20	/* NVIDIA Tegra internal UART */
 #define PORT_XR17D15X	21	/* Exar XR17D15x UART */
-#define PORT_LPC3220	22	/* NXP LPC32xx SoC "Standard" UART */
-#define PORT_8250_CIR	23	/* CIR infrared port, has its own driver */
-#define PORT_XR17V35X	24	/* Exar XR17V35x UARTs */
-#define PORT_BRCM_TRUMANAGE	25
-#define PORT_ALTR_16550_F32 26	/* Altera 16550 UART with 32 FIFOs */
-#define PORT_ALTR_16550_F64 27	/* Altera 16550 UART with 64 FIFOs */
-#define PORT_ALTR_16550_F128 28	/* Altera 16550 UART with 128 FIFOs */
-#define PORT_MAX_8250	29	/* max port ID */
+#define PORT_ALTR_16550_F32 22	/* Altera 16550 UART with 32 FIFOs */
+#define PORT_ALTR_16550_F64 23	/* Altera 16550 UART with 64 FIFOs */
+#define PORT_ALTR_16550_F128 24	/* Altera 16550 UART with 128 FIFOs */
+#define PORT_MAX_8250	25	/* max port ID */
 
 /*
  * ARM specific type numbers.  These are not currently guaranteed

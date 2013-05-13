@@ -145,6 +145,17 @@ enum rx_frame_status { /* IPC status */
 	llc_snap = 4,
 };
 
+enum core_specific_irq_mask {
+       core_mmc_tx_irq = 1,
+       core_mmc_rx_irq = 2,
+       core_mmc_rx_csum_offload_irq = 4,
+       core_irq_receive_pmt_irq = 8,
+       core_irq_tx_path_in_lpi_mode = 16,
+       core_irq_tx_path_exit_lpi_mode = 32,
+       core_irq_rx_path_in_lpi_mode = 64,
+       core_irq_rx_path_exit_lpi_mode = 128,
+};
+
 enum tx_dma_irq_status {
 	tx_hard_error = 1,
 	tx_hard_error_bump_tc = 2,

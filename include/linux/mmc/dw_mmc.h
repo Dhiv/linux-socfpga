@@ -155,8 +155,12 @@ struct dw_mci {
 	u32			fifoth_val;
 	u16			verid;
 	u16			data_offset;
-	struct device		dev;
+	struct device		*dev;
 	struct dw_mci_board	*pdata;
+	const struct dw_mci_drv_data    *drv_data;
+	void                    *priv;
+	struct clk              *biu_clk;
+	struct clk              *ciu_clk;
 	struct dw_mci_slot	*slot[MAX_MCI_SLOTS];
 
 	/* FIFO push and pull */
@@ -228,6 +232,7 @@ struct dw_mci_board {
 
 	unsigned int caps;	/* Capabilities */
 	unsigned int caps2;	/* More capabilities */
+	u32 pm_caps;	/* PM capabilities */
 	/*
 	 * Override fifo depth. If 0, autodetect it from the FIFOTH register,
 	 * but note that this may not be reliable after a bootloader has used

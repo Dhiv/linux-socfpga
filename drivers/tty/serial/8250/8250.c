@@ -282,53 +282,6 @@ static const struct serial8250_config uart_config[] = {
 		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
 		.flags		= UART_CAP_FIFO | UART_CAP_AFE | UART_CAP_EFR,
 	},
-	[PORT_XR17V35X] = {
-		.name		= "XR17V35X",
-		.fifo_size	= 256,
-		.tx_loadsz	= 256,
-		.fcr		= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_11 |
-				  UART_FCR_T_TRIG_11,
-		.flags		= UART_CAP_FIFO | UART_CAP_AFE | UART_CAP_EFR |
-				  UART_CAP_SLEEP,
-	},
-	[PORT_LPC3220] = {
-		.name		= "LPC3220",
-		.fifo_size	= 64,
-		.tx_loadsz	= 32,
-		.fcr		= UART_FCR_DMA_SELECT | UART_FCR_ENABLE_FIFO |
-				  UART_FCR_R_TRIG_00 | UART_FCR_T_TRIG_00,
-		.flags		= UART_CAP_FIFO,
-	},
-	[PORT_BRCM_TRUMANAGE] = {
-		.name		= "TruManage",
-		.fifo_size	= 1,
-		.tx_loadsz	= 1024,
-		.flags		= UART_CAP_HFIFO,
-	},
-	[PORT_8250_CIR] = {
-		.name		= "CIR port"
-	},
-	[PORT_ALTR_16550_F32] = {
-		.name			= "Altera 16550 FIFO32",
-		.fifo_size		= 32,
-		.tx_loadsz		= 32,
-		.fcr			= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
-		.flags			= UART_CAP_FIFO | UART_CAP_AFE,
-	},
-	[PORT_ALTR_16550_F64] = {
-		.name			= "Altera 16550 FIFO64",
-		.fifo_size		= 64,
-		.tx_loadsz		= 64,
-		.fcr			= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
-		.flags			= UART_CAP_FIFO | UART_CAP_AFE,
-	},
-	[PORT_ALTR_16550_F128] = {
-		.name			= "Altera 16550 FIFO128",
-		.fifo_size		= 128,
-		.tx_loadsz		= 128,
-		.fcr			= UART_FCR_ENABLE_FIFO | UART_FCR_R_TRIG_10,
-		.flags			= UART_CAP_FIFO | UART_CAP_AFE,
-	},
 };
 
 /* Uart divisor latch read */

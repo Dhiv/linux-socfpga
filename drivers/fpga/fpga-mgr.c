@@ -23,6 +23,7 @@
 #include <linux/slab.h>
 #include <linux/fpga.h>
 #include <linux/interrupt.h>
+#include <linux/irqdomain.h>
 #include <linux/of_irq.h>
 #include "fpga-mgr.h"
 
