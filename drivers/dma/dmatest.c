@@ -715,8 +715,7 @@ static int dmatest_func(void *data)
 		}
 		dma_async_issue_pending(chan);
 
-		wait_event_freezable_timeout(done_wait,
-					     done.done || kthread_should_stop(),
+		wait_event_freezable_timeout(done_wait, done.done,
 					     msecs_to_jiffies(params->timeout));
 
 		status = dma_async_is_tx_complete(chan, cookie, NULL, NULL);
@@ -996,7 +995,6 @@ static void stop_threaded_test(struct dmatest_info *info)
 static int __restart_threaded_test(struct dmatest_info *info, bool run)
 {
 	struct dmatest_params *params = &info->params;
-	int ret;
 
 	/* Stop any running test first */
 	__stop_threaded_test(info);
@@ -1011,13 +1009,23 @@ static int __restart_threaded_test(struct dmatest_info *info, bool run)
 	memcpy(params, &info->dbgfs_params, sizeof(*params));
 
 	/* Run test with new parameters */
-	ret = __run_threaded_test(info);
-	if (ret) {
-		__stop_threaded_test(info);
-		pr_err("dmatest: Can't run test\n");
+	return __run_threaded_test(info);
+}
+
+static bool __is_threaded_test_run(struct dmatest_info *info)
+{
+	struct dmatest_chan *dtc;
+
+	list_for_each_entry(dtc, &info->channels, node) {
+		struct dmatest_thread *thread;
+
+		list_for_each_entry(thread, &dtc->threads, node) {
+			if (!thread->done)
+				return true;
+		}
 	}
 
-	return ret;
+	return false;
 }
 
 static ssize_t dtf_write_string(void *to, size_t available, loff_t *ppos,
@@ -1090,22 +1098,10 @@ static ssize_t dtf_read_run(struct file *file, char __user *user_buf,
 {
 	struct dmatest_info *info = file->private_data;
 	char buf[3];
-	struct dmatest_chan *dtc;
-	bool alive = false;
 
 	mutex_lock(&info->lock);
-	list_for_each_entry(dtc, &info->channels, node) {
-		struct dmatest_thread *thread;
 
-		list_for_each_entry(thread, &dtc->threads, node) {
-			if (!thread->done) {
-				alive = true;
-				break;
-			}
-		}
-	}
-
-	if (alive) {
+	if (__is_threaded_test_run(info)) {
 		buf[0] = 'Y';
 	} else {
 		__stop_threaded_test(info);
@@ -1131,7 +1127,12 @@ static ssize_t dtf_write_run(struct file *file, const char __user *user_buf,
 
 	if (strtobool(buf, &bv) == 0) {
 		mutex_lock(&info->lock);
-		ret = __restart_threaded_test(info, bv);
+
+		if (__is_threaded_test_run(info))
+			ret = -EBUSY;
+		else
+			ret = __restart_threaded_test(info, bv);
+
 		mutex_unlock(&info->lock);
 	}
 
