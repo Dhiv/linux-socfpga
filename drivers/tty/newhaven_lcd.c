@@ -26,6 +26,7 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/tty.h>
+#include <linux/delay.h>
 
 #define LCD_COMMAND             0xfe
 #define LCD_DISPLAY_ON          0x41
@@ -70,6 +71,7 @@ static int lcd_cmd_no_params(struct lcd *lcd_data, u8 cmd)
 		pr_err("%s: i2c_master_send returns %d\n", __func__, count);
 		return -1;
 	}
+	msleep(1);
 	return 0;
 }
 
@@ -83,6 +85,7 @@ static int lcd_cmd_one_param(struct lcd *lcd_data, u8 cmd, u8 param)
 		pr_err("%s: i2c_master_send returns %d\n", __func__, count);
 		return -1;
 	}
+	msleep(1);
 	return 0;
 }
 
