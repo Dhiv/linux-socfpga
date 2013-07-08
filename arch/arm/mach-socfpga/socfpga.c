@@ -303,7 +303,7 @@ static void __init gic_init_irq(void)
 {
 	of_irq_init(irq_match);
 	socfpga_sysmgr_init();
-
+	socfpga_init_clocks();
 	twd_local_timer_of_register();
 }
 

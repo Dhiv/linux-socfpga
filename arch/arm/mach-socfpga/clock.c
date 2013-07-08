@@ -12,9 +12,11 @@
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/clk.h>
-#include <linux/mutex.h>
+#include <linux/clkdev.h>
 
-#include <mach/clkdev.h>
+struct clk {
+        unsigned long rate;
+};
 
 int clk_enable(struct clk *clk)
 {
@@ -35,19 +37,27 @@ EXPORT_SYMBOL(clk_get_rate);
 
 long clk_round_rate(struct clk *clk, unsigned long rate)
 {
-	long ret = -EIO;
-	if (clk->ops && clk->ops->round)
-		ret = clk->ops->round(clk, rate);
-	return ret;
+	return clk->rate;
 }
 EXPORT_SYMBOL(clk_round_rate);
 
 int clk_set_rate(struct clk *clk, unsigned long rate)
 {
-	int ret = -EIO;
-	if (clk->ops && clk->ops->set)
-		ret = clk->ops->set(clk, rate);
-	return ret;
+	return 0;
 }
 EXPORT_SYMBOL(clk_set_rate);
+
+static struct clk main_pll = { .rate = 1600000000 };
+static struct clk per_clk = { .rate = 1000000000 };
+
+static struct clk_lookup lookups[] = {
+	{ .clk = &per_clk, .con_id = "pclk", },
+	{ .clk = &per_clk, .dev_id = "fff00000.spi", },
+	{ .clk = &per_clk, .dev_id = "fff01000.spi", },
+};
+
+void __init socfpga_init_clocks(void)
+{
+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+}
 
