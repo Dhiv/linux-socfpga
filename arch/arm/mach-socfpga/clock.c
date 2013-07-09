@@ -58,6 +58,7 @@ static struct clk_lookup lookups[] = {
 	{ .clk = &per_clk, .dev_id = "ffc05000.i2c", },
 	{ .clk = &per_clk, .dev_id = "ffc06000.i2c", },
 	{ .clk = &per_clk, .dev_id = "ffc07000.i2c", },
+	{ .clk = &per_clk, .dev_id = "ffd02000.wd", },
 };
 
 void __init socfpga_init_clocks(void)

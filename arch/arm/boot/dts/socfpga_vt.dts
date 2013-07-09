@@ -169,5 +169,14 @@
 		serial1@ffc03000 {
 			clock-frequency = <7372800>;
 		};
+
+		watchdog0: wd@ffd02000 {
+			status = "okay";
+		};
+
+		usb0: usb@ffb00000 {
+			ulpi-ddr = <0>;
+			status = "okay";
+		};
 	};
 };
