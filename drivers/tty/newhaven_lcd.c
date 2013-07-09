@@ -563,10 +563,10 @@ static struct i2c_driver lcd_i2c_driver = {
 	.driver = {
 		.name = DRV_NAME,
 		.owner = THIS_MODULE,
-		.of_match_table = lcd_of_match,
+		.of_match_table = of_match_ptr(lcd_of_match),
 	},
 	.probe = lcd_probe,
-	.remove = lcd_remove,
+	.remove = __devexit_p(lcd_remove),
 	.id_table = lcd_id,
 };
 
