@@ -48,33 +48,15 @@
 			};
 		};
 
-		dcan0: d_can@ffc00000 {
-			status = "disabled";
-		};
-
-		dcan1: d_can@ffc10000 {
-			status = "disabled";
-		};
-
-		ethernet@ff700000 {
-			status = "disabled";
-		};
-
 		ethernet@ff702000 {
 			phy-mode = "rgmii";
 			phy-addr = <0xffffffff>; /* probe for phy addr */
+			status = "okay";
 		};
 
-		i2c1: i2c@ffc05000 {
-			status = "disabled";
-		};
-
-		i2c2: i2c@ffc06000 {
-			status = "disabled";
-		};
-
-		i2c3: i2c@ffc07000 {
-			status = "disabled";
+		i2c0: i2c@ffc04000 {
+			speed-mode = <0>;
+			status = "okay";
 		};
 
 		qspi: spi@ff705000 {
@@ -146,16 +128,9 @@
 			clock-frequency = <100000000>;
 		};
 
-		usb0: usb@ffb00000 {
-			status = "disabled";
-		};
-
 		usb1: usb@ffb40000 {
 			ulpi-ddr = <0>;
-		};
-
-		i2c0: i2c@ffc04000 {
-			speed-mode = <0>;
+			status = "okay";
 		};
 
 		watchdog0: wd@ffd02000 {
