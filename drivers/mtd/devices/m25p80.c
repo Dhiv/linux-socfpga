@@ -799,6 +799,7 @@ struct flash_info {
 	u16		flags;
 #define	SECT_4K		0x01		/* OPCODE_BE_4K works uniformly */
 #define	M25P_NO_ERASE	0x02		/* No erase command needed */
+#define SST_WRITE	0x04
 #define	USE_FSR   0x04    /* use flag status register */
 };
 
