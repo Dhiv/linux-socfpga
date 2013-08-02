@@ -48,6 +48,10 @@
 
 #define SYSMGR_EMACGRP_CTRL_PHYSEL_MASK 0x00000003
 
+/* Clock Manager offsets */
+#define CLKMGR_MAINPLLGRP_EN	0x60
+#define CLKMGR_PERPLLGRP_EN	0xA0
+
 extern void secondary_startup(void);
 extern void __iomem *socfpga_scu_base_addr;
 extern void __iomem *sys_manager_base_addr;

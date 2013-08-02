@@ -147,6 +147,15 @@ static void __init enable_periphs(void)
 	__raw_writel(0, rst_manager_base_addr + SOCFPGA_RSTMGR_MODPERRST);
 }
 
+static void __init enable_clks(void)
+{
+        /* Turn on all Main PLL group clocks*/
+        writel(0x3ff, clk_mgr_base_addr + CLKMGR_MAINPLLGRP_EN);
+
+	/* Turn on all Peripheral PLL group clocks */
+	writel(0xfff, clk_mgr_base_addr + CLKMGR_PERPLLGRP_EN);
+}
+
 static int stmmac_mdio_write_null(struct mii_bus *bus, int phyaddr, int phyreg,
 			     u16 phydata)
 {
@@ -351,6 +360,9 @@ static void __init socfpga_cyclone5_init(void)
 		socfpga_auxdata_lookup, NULL);
 
 	enable_periphs();
+
+	/* TEMP - NEED to FIX */
+	enable_clks();
 
 	socfpga_soc_device_init();
 }
