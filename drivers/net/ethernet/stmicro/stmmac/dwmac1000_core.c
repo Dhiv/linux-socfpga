@@ -241,57 +241,6 @@ static void dwmac1000_irq_status(void __iomem *ioaddr)
 			status |= core_irq_rx_path_exit_lpi_mode;
 		}
 	}
-
-	return status;
-}
-
-static void  dwmac1000_set_eee_mode(void __iomem *ioaddr)
-{
-	u32 value;
-
-	/* Enable the link status receive on RGMII, SGMII ore SMII
-	 * receive path and instruct the transmit to enter in LPI
-	 * state. */
-	value = readl(ioaddr + LPI_CTRL_STATUS);
-	value |= LPI_CTRL_STATUS_LPIEN | LPI_CTRL_STATUS_LPITXA;
-	writel(value, ioaddr + LPI_CTRL_STATUS);
-}
-
-static void  dwmac1000_reset_eee_mode(void __iomem *ioaddr)
-{
-	u32 value;
-
-	value = readl(ioaddr + LPI_CTRL_STATUS);
-	value &= ~(LPI_CTRL_STATUS_LPIEN | LPI_CTRL_STATUS_LPITXA);
-	writel(value, ioaddr + LPI_CTRL_STATUS);
-}
-
-static void  dwmac1000_set_eee_pls(void __iomem *ioaddr, int link)
-{
-	u32 value;
-
-	value = readl(ioaddr + LPI_CTRL_STATUS);
-
-	if (link)
-		value |= LPI_CTRL_STATUS_PLS;
-	else
-		value &= ~LPI_CTRL_STATUS_PLS;
-
-	writel(value, ioaddr + LPI_CTRL_STATUS);
-}
-
-static void  dwmac1000_set_eee_timer(void __iomem *ioaddr, int ls, int tw)
-{
-	int value = ((tw & 0xffff)) | ((ls & 0x7ff) << 16);
-
-	/* Program the timers in the LPI timer control register:
-	 * LS: minimum time (ms) for which the link
-	 *  status from PHY should be ok before transmitting
-	 *  the LPI pattern.
-	 * TW: minimum time (us) for which the core waits
-	 *  after it has stopped transmitting the LPI pattern.
-	 */
-	writel(value, ioaddr + LPI_TIMER_CTRL);
 }
 
 static const struct stmmac_ops dwmac1000_ops = {
