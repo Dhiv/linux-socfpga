@@ -3057,12 +3057,7 @@ probe_err3:
 probe_err2:
 	pl330_del(pi);
 probe_err1:
-	for (i = 0; i < AMBA_NR_IRQS; i++) {
-		irq = adev->irq[i];
-		if (irq == 0)
-			break;
-		free_irq(irq, pi);
-	}
+	free_irq(irq, pi);
 
 	return ret;
 }
@@ -3073,7 +3068,6 @@ static int pl330_remove(struct amba_device *adev)
 	struct dma_pl330_chan *pch, *_p;
 	struct pl330_info *pi;
 	int irq;
-	int i;
 
 	if (!pdmac)
 		return 0;
@@ -3100,12 +3094,8 @@ static int pl330_remove(struct amba_device *adev)
 
 	pl330_del(pi);
 
-	for (i = 0; i < AMBA_NR_IRQS; i++) {
-		irq = adev->irq[i];
-		if (irq == 0)
-			break;
-		free_irq(irq, pi);
-	}
+	irq = adev->irq[0];
+	free_irq(irq, pi);
 
 	return 0;
 }
