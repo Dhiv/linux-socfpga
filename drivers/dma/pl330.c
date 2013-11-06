@@ -2933,15 +2933,17 @@ pl330_probe(struct amba_device *adev, const struct amba_id *id)
 
 	amba_set_drvdata(adev, pdmac);
 
-	for (i = 0; i < AMBA_NR_IRQS; i++) {
-		irq = adev->irq[i];
-		if (irq == 0)
-			break;
-		ret = request_irq(irq, pl330_irq_handler, 0,
-				dev_name(&adev->dev), pi);
+	if (pdat && pdat->init) {
+		ret = pdat->init(adev);
 		if (ret)
-			goto probe_err1;
+			return ret;
 	}
+
+	irq = adev->irq[0];
+	ret = request_irq(irq, pl330_irq_handler, 0,
+			dev_name(&adev->dev), pi);
+	if (ret)
+		return ret;
 
 	pi->pcfg.periph_id = adev->periphid;
 	ret = pl330_add(pi);
